@@ -10,33 +10,182 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
+import { Route as AuthRouteImport } from './routes/auth'
+import { Route as AuthenticatedBemVindoRouteImport } from './routes/_authenticated/bem-vindo'
+import { Route as AuthenticatedContaInstagramRouteImport } from './routes/_authenticated/conta-instagram'
+import { Route as AuthenticatedHistoricoRouteImport } from './routes/_authenticated/historico'
+import { Route as AuthenticatedInicioRouteImport } from './routes/_authenticated/inicio'
+import { Route as AuthenticatedMinhaRedeRouteImport } from './routes/_authenticated/minha-rede'
+import { Route as AuthenticatedNovaAnaliseRouteImport } from './routes/_authenticated/nova-analise'
+import { Route as AuthenticatedRelatoriosRouteImport } from './routes/_authenticated/relatorios'
+import { Route as AuthenticatedAnaliseIdRouteImport } from './routes/_authenticated/analise.$id'
+import { Route as AuthenticatedEquipeIndexRouteImport } from './routes/_authenticated/equipe.index'
+import { Route as AuthenticatedEquipeLeaderIdRouteImport } from './routes/_authenticated/equipe.$leaderId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
+  id: '/_authenticated',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedBemVindoRoute = AuthenticatedBemVindoRouteImport.update({
+  id: '/bem-vindo',
+  path: '/bem-vindo',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedContaInstagramRoute =
+  AuthenticatedContaInstagramRouteImport.update({
+    id: '/conta-instagram',
+    path: '/conta-instagram',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedHistoricoRoute = AuthenticatedHistoricoRouteImport.update({
+  id: '/historico',
+  path: '/historico',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedInicioRoute = AuthenticatedInicioRouteImport.update({
+  id: '/inicio',
+  path: '/inicio',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedMinhaRedeRoute = AuthenticatedMinhaRedeRouteImport.update({
+  id: '/minha-rede',
+  path: '/minha-rede',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedNovaAnaliseRoute =
+  AuthenticatedNovaAnaliseRouteImport.update({
+    id: '/nova-analise',
+    path: '/nova-analise',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedRelatoriosRoute = AuthenticatedRelatoriosRouteImport.update({
+  id: '/relatorios',
+  path: '/relatorios',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedAnaliseIdRoute = AuthenticatedAnaliseIdRouteImport.update({
+  id: '/analise/$id',
+  path: '/analise/$id',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedEquipeIndexRoute =
+  AuthenticatedEquipeIndexRouteImport.update({
+    id: '/equipe/',
+    path: '/equipe/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedEquipeLeaderIdRoute =
+  AuthenticatedEquipeLeaderIdRouteImport.update({
+    id: '/equipe/$leaderId',
+    path: '/equipe/$leaderId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
+  '/bem-vindo': typeof AuthenticatedBemVindoRoute
+  '/conta-instagram': typeof AuthenticatedContaInstagramRoute
+  '/historico': typeof AuthenticatedHistoricoRoute
+  '/inicio': typeof AuthenticatedInicioRoute
+  '/minha-rede': typeof AuthenticatedMinhaRedeRoute
+  '/nova-analise': typeof AuthenticatedNovaAnaliseRoute
+  '/relatorios': typeof AuthenticatedRelatoriosRoute
+  '/analise/$id': typeof AuthenticatedAnaliseIdRoute
+  '/equipe/$leaderId': typeof AuthenticatedEquipeLeaderIdRoute
+  '/equipe/': typeof AuthenticatedEquipeIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
+  '/bem-vindo': typeof AuthenticatedBemVindoRoute
+  '/conta-instagram': typeof AuthenticatedContaInstagramRoute
+  '/historico': typeof AuthenticatedHistoricoRoute
+  '/inicio': typeof AuthenticatedInicioRoute
+  '/minha-rede': typeof AuthenticatedMinhaRedeRoute
+  '/nova-analise': typeof AuthenticatedNovaAnaliseRoute
+  '/relatorios': typeof AuthenticatedRelatoriosRoute
+  '/analise/$id': typeof AuthenticatedAnaliseIdRoute
+  '/equipe/$leaderId': typeof AuthenticatedEquipeLeaderIdRoute
+  '/equipe': typeof AuthenticatedEquipeIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
+  '/auth': typeof AuthRoute
+  '/_authenticated/bem-vindo': typeof AuthenticatedBemVindoRoute
+  '/_authenticated/conta-instagram': typeof AuthenticatedContaInstagramRoute
+  '/_authenticated/historico': typeof AuthenticatedHistoricoRoute
+  '/_authenticated/inicio': typeof AuthenticatedInicioRoute
+  '/_authenticated/minha-rede': typeof AuthenticatedMinhaRedeRoute
+  '/_authenticated/nova-analise': typeof AuthenticatedNovaAnaliseRoute
+  '/_authenticated/relatorios': typeof AuthenticatedRelatoriosRoute
+  '/_authenticated/analise/$id': typeof AuthenticatedAnaliseIdRoute
+  '/_authenticated/equipe/$leaderId': typeof AuthenticatedEquipeLeaderIdRoute
+  '/_authenticated/equipe/': typeof AuthenticatedEquipeIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/auth'
+    | '/bem-vindo'
+    | '/conta-instagram'
+    | '/historico'
+    | '/inicio'
+    | '/minha-rede'
+    | '/nova-analise'
+    | '/relatorios'
+    | '/analise/$id'
+    | '/equipe/$leaderId'
+    | '/equipe/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/auth'
+    | '/bem-vindo'
+    | '/conta-instagram'
+    | '/historico'
+    | '/inicio'
+    | '/minha-rede'
+    | '/nova-analise'
+    | '/relatorios'
+    | '/analise/$id'
+    | '/equipe/$leaderId'
+    | '/equipe'
+  id:
+    | '__root__'
+    | '/'
+    | '/_authenticated'
+    | '/auth'
+    | '/_authenticated/bem-vindo'
+    | '/_authenticated/conta-instagram'
+    | '/_authenticated/historico'
+    | '/_authenticated/inicio'
+    | '/_authenticated/minha-rede'
+    | '/_authenticated/nova-analise'
+    | '/_authenticated/relatorios'
+    | '/_authenticated/analise/$id'
+    | '/_authenticated/equipe/$leaderId'
+    | '/_authenticated/equipe/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
+  AuthRoute: typeof AuthRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,11 +197,126 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated': {
+      id: '/_authenticated'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthenticatedRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/bem-vindo': {
+      id: '/_authenticated/bem-vindo'
+      path: '/bem-vindo'
+      fullPath: '/bem-vindo'
+      preLoaderRoute: typeof AuthenticatedBemVindoRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/conta-instagram': {
+      id: '/_authenticated/conta-instagram'
+      path: '/conta-instagram'
+      fullPath: '/conta-instagram'
+      preLoaderRoute: typeof AuthenticatedContaInstagramRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/historico': {
+      id: '/_authenticated/historico'
+      path: '/historico'
+      fullPath: '/historico'
+      preLoaderRoute: typeof AuthenticatedHistoricoRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/inicio': {
+      id: '/_authenticated/inicio'
+      path: '/inicio'
+      fullPath: '/inicio'
+      preLoaderRoute: typeof AuthenticatedInicioRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/minha-rede': {
+      id: '/_authenticated/minha-rede'
+      path: '/minha-rede'
+      fullPath: '/minha-rede'
+      preLoaderRoute: typeof AuthenticatedMinhaRedeRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/nova-analise': {
+      id: '/_authenticated/nova-analise'
+      path: '/nova-analise'
+      fullPath: '/nova-analise'
+      preLoaderRoute: typeof AuthenticatedNovaAnaliseRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/relatorios': {
+      id: '/_authenticated/relatorios'
+      path: '/relatorios'
+      fullPath: '/relatorios'
+      preLoaderRoute: typeof AuthenticatedRelatoriosRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/analise/$id': {
+      id: '/_authenticated/analise/$id'
+      path: '/analise/$id'
+      fullPath: '/analise/$id'
+      preLoaderRoute: typeof AuthenticatedAnaliseIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/equipe/': {
+      id: '/_authenticated/equipe/'
+      path: '/equipe'
+      fullPath: '/equipe/'
+      preLoaderRoute: typeof AuthenticatedEquipeIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/equipe/$leaderId': {
+      id: '/_authenticated/equipe/$leaderId'
+      path: '/equipe/$leaderId'
+      fullPath: '/equipe/$leaderId'
+      preLoaderRoute: typeof AuthenticatedEquipeLeaderIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
 
+interface AuthenticatedRouteRouteChildren {
+  AuthenticatedBemVindoRoute: typeof AuthenticatedBemVindoRoute
+  AuthenticatedContaInstagramRoute: typeof AuthenticatedContaInstagramRoute
+  AuthenticatedHistoricoRoute: typeof AuthenticatedHistoricoRoute
+  AuthenticatedInicioRoute: typeof AuthenticatedInicioRoute
+  AuthenticatedMinhaRedeRoute: typeof AuthenticatedMinhaRedeRoute
+  AuthenticatedNovaAnaliseRoute: typeof AuthenticatedNovaAnaliseRoute
+  AuthenticatedRelatoriosRoute: typeof AuthenticatedRelatoriosRoute
+  AuthenticatedAnaliseIdRoute: typeof AuthenticatedAnaliseIdRoute
+  AuthenticatedEquipeLeaderIdRoute: typeof AuthenticatedEquipeLeaderIdRoute
+  AuthenticatedEquipeIndexRoute: typeof AuthenticatedEquipeIndexRoute
+}
+
+const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedBemVindoRoute: AuthenticatedBemVindoRoute,
+  AuthenticatedContaInstagramRoute: AuthenticatedContaInstagramRoute,
+  AuthenticatedHistoricoRoute: AuthenticatedHistoricoRoute,
+  AuthenticatedInicioRoute: AuthenticatedInicioRoute,
+  AuthenticatedMinhaRedeRoute: AuthenticatedMinhaRedeRoute,
+  AuthenticatedNovaAnaliseRoute: AuthenticatedNovaAnaliseRoute,
+  AuthenticatedRelatoriosRoute: AuthenticatedRelatoriosRoute,
+  AuthenticatedAnaliseIdRoute: AuthenticatedAnaliseIdRoute,
+  AuthenticatedEquipeLeaderIdRoute: AuthenticatedEquipeLeaderIdRoute,
+  AuthenticatedEquipeIndexRoute: AuthenticatedEquipeIndexRoute,
+}
+
+const AuthenticatedRouteRouteWithChildren =
+  AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
+  AuthRoute: AuthRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
