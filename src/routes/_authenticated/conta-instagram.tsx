@@ -42,7 +42,7 @@ function InstagramAccount() {
     queryFn: async () => {
       const { data } = await supabase
         .from("instagram_connections")
-        .select("id, status, external_account_id, username, connected_at, token_secret_name")
+        .select("id, status, external_account_id, account_username, connected_at, token_secret_name")
         .maybeSingle();
       return data ?? null;
     },
@@ -66,7 +66,7 @@ function InstagramAccount() {
       const { error } = await supabase.from("instagram_connections").upsert(
         {
           campaign_id: session.campaign.id,
-          username: account.trim().replace(/^@/, "") || null,
+          account_username: account.trim().replace(/^@/, "") || null,
           status: "pending",
           token_secret_name: "META_ACCESS_TOKEN",
         },
@@ -107,7 +107,7 @@ function InstagramAccount() {
         <CardContent className="space-y-5">
           {connected ? (
             <p className="text-sm text-muted-foreground">
-              Conta <strong>@{connection?.username}</strong> conectada em{" "}
+              Conta <strong>@{connection?.account_username}</strong> conectada em{" "}
               {formatDateTime(connection?.connected_at)}. As análises usam dados oficiais do
               Instagram.
             </p>
@@ -123,7 +123,7 @@ function InstagramAccount() {
               <Label htmlFor="conta">@ da conta profissional da campanha</Label>
               <Input
                 id="conta"
-                value={account || connection?.username || ""}
+                value={account || connection?.account_username || ""}
                 onChange={(e) => setAccount(e.target.value)}
                 placeholder="@suacampanha"
               />

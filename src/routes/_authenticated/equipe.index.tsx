@@ -86,7 +86,6 @@ function TeamPage() {
         name: name.trim(),
         invite_email: email.trim().toLowerCase() || null,
         phone: phone.trim() || null,
-        created_by: session.userId,
       });
       if (error) throw error;
       toast.success("Líder cadastrado!", {
@@ -108,7 +107,7 @@ function TeamPage() {
   }
 
   async function toggleStatus(id: string, status: string) {
-    const next = status === "active" ? "inactive" : "active";
+    const next = (status === "active" ? "inactive" : "active") as "active" | "inactive";
     const { error } = await supabase.from("leaders").update({ status: next }).eq("id", id);
     if (error) {
       toast.error("Não foi possível atualizar.");
