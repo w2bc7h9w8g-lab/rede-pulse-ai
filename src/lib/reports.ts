@@ -35,9 +35,9 @@ export type InteractionRecord = {
 };
 
 export type ReportFilters = {
-  leaderId?: string | null;
-  from?: string | null;
-  to?: string | null;
+  leaderId?: string | null | undefined;
+  from?: string | null | undefined;
+  to?: string | null | undefined;
 };
 
 const ANALYSIS_SELECT =

@@ -150,11 +150,9 @@ function AnalysisDetail() {
         <StatCard
           label="Comentários da publicação"
           value={formatNumber(analysis.posts?.comments_count ?? null)}
-          hint={
-            analysis.posts?.likes_count
-              ? `${formatNumber(analysis.posts.likes_count)} curtidas no total`
-              : undefined
-          }
+          {...(analysis.posts?.likes_count
+            ? { hint: `${formatNumber(analysis.posts.likes_count)} curtidas no total` }
+            : {})}
         />
       </div>
 
