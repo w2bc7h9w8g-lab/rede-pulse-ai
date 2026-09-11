@@ -30,30 +30,16 @@ function Welcome() {
     if (!session) return;
     setLoading(true);
     try {
-      const { data: campaign, error } = await supabase
-        .from("campaigns")
-        .insert({
-          name: name.trim(),
-          candidate_name: candidate.trim() || null,
-          instagram_username: instagram.trim().replace(/^@/, "") || null,
-          is_demo: withDemo,
-        })
-        .select("id")
-        .single();
-      if (error || !campaign) throw error ?? new Error("Falha ao criar a campanha.");
+      const { data: campaignId, error } = await supabase.rpc("create_campaign_for_current_user", {
+        _name: name.trim(),
+        _candidate_name: candidate.trim() || null,
+        _instagram_username: instagram.trim().replace(/^@/, "") || null,
+        _is_demo: withDemo,
+      });
+      if (error || !campaignId) throw error ?? new Error("Falha ao criar a campanha.");
 
-      const { error: profileError } = await supabase
-        .from("profiles")
-        .update({ campaign_id: campaign.id })
-        .eq("id", session.userId);
-      if (profileError) throw profileError;
+      if (withDemo) await seedDemoData(campaignId);
 
-      const { error: roleError } = await supabase
-        .from("user_roles")
-        .insert({ user_id: session.userId, role: "coordinator", campaign_id: campaign.id });
-      if (roleError) throw roleError;
-
-      if (withDemo) await seedDemoData(campaign.id);
 
       await queryClient.invalidateQueries();
       toast.success("Campanha criada!");
