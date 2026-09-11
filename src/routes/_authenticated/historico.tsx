@@ -39,6 +39,8 @@ function HistoryPage() {
   const { data: session } = useSession();
   const coordinator = isCoordinator(session);
   const [leaderFilter, setLeaderFilter] = useState("todos");
+  const [exporting, setExporting] = useState(false);
+
 
   const { data: leaders } = useQuery({
     queryKey: ["leaders-select"],
