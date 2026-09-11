@@ -514,10 +514,6 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      can_access_leader: {
-        Args: { _campaign_id: string; _leader_id: string }
-        Returns: boolean
-      }
       create_campaign_for_current_user: {
         Args: {
           _candidate_name?: string
@@ -527,18 +523,7 @@ export type Database = {
         }
         Returns: string
       }
-      current_campaign_id: { Args: never; Returns: string }
-      current_leader_id: { Args: never; Returns: string }
       ensure_profile: { Args: { _name?: string }; Returns: undefined }
-      has_role: {
-        Args: {
-          _role: Database["public"]["Enums"]["app_role"]
-          _user_id: string
-        }
-        Returns: boolean
-      }
-      is_coordinator: { Args: never; Returns: boolean }
-      is_superadmin: { Args: never; Returns: boolean }
     }
     Enums: {
       analysis_status: "pending" | "running" | "completed" | "failed"
