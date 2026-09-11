@@ -46,10 +46,14 @@ export async function downloadXlsx(sheets: SheetSpec[], fileName: string): Promi
     names.push(name);
   });
 
-  const data = usable.map((sheet) => toCells(sheet.rows, true));
+  const sheetsPayload = usable.map((sheet, index) => ({
+    sheet: names[index] as string,
+    data: toCells(sheet.rows, true),
+  }));
 
-  const blob = await writeXlsxFile(data as never, { sheets: names } as never).toBlob();
+  const blob = await writeXlsxFile(sheetsPayload as never).toBlob();
   triggerDownload(blob, fileName.endsWith(".xlsx") ? fileName : `${fileName}.xlsx`);
+
 
 }
 
