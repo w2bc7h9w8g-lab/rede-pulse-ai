@@ -120,12 +120,49 @@ function TeamPage() {
     (a, b) => stats(b.id).avg - stats(a.id).avg,
   );
 
+  async function handleExportTeam() {
+    if (ranking.length === 0) {
+      toast.error("Não há líderes para exportar.");
+      return;
+    }
+    try {
+      const rows: (string | number)[][] = [
+        ["Líder", "E-mail", "WhatsApp", "Situação", "Acesso", "Tamanho da rede", "Análises", "Participação média"],
+        ...ranking.map((leader) => {
+          const s = stats(leader.id);
+          return [
+            leader.name,
+            leader.invite_email ?? "",
+            leader.phone ?? "",
+            leader.status === "active" ? "Ativo" : "Inativo",
+            leader.user_id ? "Acesso ativo" : "Aguardando primeiro acesso",
+            s.network,
+            s.analyses,
+            formatPercent(s.avg),
+          ];
+        }),
+      ];
+      await downloadXlsx([{ name: "Resumo", rows }], `redepulse-equipe-${brDayKey(new Date())}`);
+      toast.success("Planilha da equipe gerada.");
+    } catch (error) {
+      toast.error("Não foi possível gerar a planilha", {
+        description: error instanceof Error ? error.message : undefined,
+      });
+    }
+  }
+
   return (
     <>
       <PageHeader
         title="Minha equipe"
         description="Cadastre seus líderes. Cada um monta a própria rede e vê apenas os resultados dela."
+        actions={
+          <Button variant="outline" onClick={handleExportTeam}>
+            <FileSpreadsheet className="size-4" /> Baixar Excel
+          </Button>
+        }
       />
+
 
       <Card className="max-w-2xl">
         <CardHeader>
