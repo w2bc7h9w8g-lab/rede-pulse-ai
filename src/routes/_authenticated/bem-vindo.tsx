@@ -32,8 +32,9 @@ function Welcome() {
     try {
       const { data: campaignId, error } = await supabase.rpc("create_campaign_for_current_user", {
         _name: name.trim(),
-        _candidate_name: candidate.trim() || undefined,
-        _instagram_username: instagram.trim().replace(/^@/, "") || undefined,
+        ...(candidate.trim() ? { _candidate_name: candidate.trim() } : {}),
+        ...(instagram.trim() ? { _instagram_username: instagram.trim().replace(/^@/, "") } : {}),
+
 
         _is_demo: withDemo,
       });
