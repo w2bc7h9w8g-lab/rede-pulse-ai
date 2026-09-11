@@ -518,6 +518,15 @@ export type Database = {
         Args: { _campaign_id: string; _leader_id: string }
         Returns: boolean
       }
+      create_campaign_for_current_user: {
+        Args: {
+          _candidate_name?: string
+          _instagram_username?: string
+          _is_demo?: boolean
+          _name: string
+        }
+        Returns: string
+      }
       current_campaign_id: { Args: never; Returns: string }
       current_leader_id: { Args: never; Returns: string }
       ensure_profile: { Args: { _name?: string }; Returns: undefined }
