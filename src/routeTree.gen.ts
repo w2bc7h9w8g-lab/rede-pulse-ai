@@ -19,6 +19,7 @@ import { Route as AuthenticatedInicioRouteImport } from './routes/_authenticated
 import { Route as AuthenticatedMinhaRedeRouteImport } from './routes/_authenticated/minha-rede'
 import { Route as AuthenticatedNovaAnaliseRouteImport } from './routes/_authenticated/nova-analise'
 import { Route as AuthenticatedRelatoriosRouteImport } from './routes/_authenticated/relatorios'
+import { Route as AuthCallbackRouteImport } from './routes/auth_.callback'
 import { Route as AuthenticatedAnaliseIdRouteImport } from './routes/_authenticated/analise.$id'
 import { Route as AuthenticatedEquipeIndexRouteImport } from './routes/_authenticated/equipe.index'
 import { Route as AuthenticatedEquipeLeaderIdRouteImport } from './routes/_authenticated/equipe.$leaderId'
@@ -74,6 +75,11 @@ const AuthenticatedRelatoriosRoute = AuthenticatedRelatoriosRouteImport.update({
   path: '/relatorios',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthCallbackRoute = AuthCallbackRouteImport.update({
+  id: '/auth_/callback',
+  path: '/auth/callback',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedAnaliseIdRoute = AuthenticatedAnaliseIdRouteImport.update({
   id: '/analise/$id',
   path: '/analise/$id',
@@ -102,6 +108,7 @@ export interface FileRoutesByFullPath {
   '/minha-rede': typeof AuthenticatedMinhaRedeRoute
   '/nova-analise': typeof AuthenticatedNovaAnaliseRoute
   '/relatorios': typeof AuthenticatedRelatoriosRoute
+  '/auth/callback': typeof AuthCallbackRoute
   '/analise/$id': typeof AuthenticatedAnaliseIdRoute
   '/equipe/$leaderId': typeof AuthenticatedEquipeLeaderIdRoute
   '/equipe/': typeof AuthenticatedEquipeIndexRoute
@@ -116,6 +123,7 @@ export interface FileRoutesByTo {
   '/minha-rede': typeof AuthenticatedMinhaRedeRoute
   '/nova-analise': typeof AuthenticatedNovaAnaliseRoute
   '/relatorios': typeof AuthenticatedRelatoriosRoute
+  '/auth/callback': typeof AuthCallbackRoute
   '/analise/$id': typeof AuthenticatedAnaliseIdRoute
   '/equipe/$leaderId': typeof AuthenticatedEquipeLeaderIdRoute
   '/equipe': typeof AuthenticatedEquipeIndexRoute
@@ -132,6 +140,7 @@ export interface FileRoutesById {
   '/_authenticated/minha-rede': typeof AuthenticatedMinhaRedeRoute
   '/_authenticated/nova-analise': typeof AuthenticatedNovaAnaliseRoute
   '/_authenticated/relatorios': typeof AuthenticatedRelatoriosRoute
+  '/auth_/callback': typeof AuthCallbackRoute
   '/_authenticated/analise/$id': typeof AuthenticatedAnaliseIdRoute
   '/_authenticated/equipe/$leaderId': typeof AuthenticatedEquipeLeaderIdRoute
   '/_authenticated/equipe/': typeof AuthenticatedEquipeIndexRoute
@@ -148,6 +157,7 @@ export interface FileRouteTypes {
     | '/minha-rede'
     | '/nova-analise'
     | '/relatorios'
+    | '/auth/callback'
     | '/analise/$id'
     | '/equipe/$leaderId'
     | '/equipe/'
@@ -162,6 +172,7 @@ export interface FileRouteTypes {
     | '/minha-rede'
     | '/nova-analise'
     | '/relatorios'
+    | '/auth/callback'
     | '/analise/$id'
     | '/equipe/$leaderId'
     | '/equipe'
@@ -177,6 +188,7 @@ export interface FileRouteTypes {
     | '/_authenticated/minha-rede'
     | '/_authenticated/nova-analise'
     | '/_authenticated/relatorios'
+    | '/auth_/callback'
     | '/_authenticated/analise/$id'
     | '/_authenticated/equipe/$leaderId'
     | '/_authenticated/equipe/'
@@ -186,6 +198,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
+  AuthCallbackRoute: typeof AuthCallbackRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -260,6 +273,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedRelatoriosRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/auth_/callback': {
+      id: '/auth_/callback'
+      path: '/auth/callback'
+      fullPath: '/auth/callback'
+      preLoaderRoute: typeof AuthCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/analise/$id': {
       id: '/_authenticated/analise/$id'
       path: '/analise/$id'
@@ -317,6 +337,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
+  AuthCallbackRoute: AuthCallbackRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

@@ -41,9 +41,16 @@ function AuthPage() {
     const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
     setLoading(false);
     if (error) {
-      toast.error("Não foi possível entrar", {
-        description: "Confira o e-mail e a senha e tente novamente.",
-      });
+      const notConfirmed = /confirm/i.test(error.message);
+      toast.error(
+        notConfirmed ? "Confirme seu e-mail antes de entrar" : "Não foi possível entrar",
+        {
+          description: notConfirmed
+            ? "Abra o link que enviamos para o seu e-mail. Se não chegou, peça um novo envio abaixo."
+            : "Confira o e-mail e a senha e tente novamente.",
+        },
+      );
+      if (notConfirmed) setSentConfirmation(true);
       return;
     }
     navigate({ to: "/inicio", replace: true });
@@ -59,11 +66,19 @@ function AuthPage() {
     const { data, error } = await supabase.auth.signUp({
       email: email.trim(),
       password,
-      options: { data: { name: name.trim() }, emailRedirectTo: window.location.origin },
+      options: {
+        data: { name: name.trim() },
+        emailRedirectTo: `${window.location.origin}/auth/callback`,
+      },
     });
     setLoading(false);
     if (error) {
-      toast.error("Não foi possível criar a conta", { description: error.message });
+      const tooMany = /rate|limit|seconds/i.test(error.message);
+      toast.error("Não foi possível criar a conta", {
+        description: tooMany
+          ? "Muitas tentativas seguidas. Aguarde alguns minutos e tente de novo."
+          : error.message,
+      });
       return;
     }
     if (!data.session) {
@@ -73,18 +88,57 @@ function AuthPage() {
     navigate({ to: "/inicio", replace: true });
   }
 
-  async function handleGoogle() {
-    setLoading(true);
-    const result = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: window.location.origin,
-    });
-    if (result.error) {
-      setLoading(false);
-      toast.error("Não foi possível entrar com o Google.");
+  async function handleResend() {
+    if (!email.trim()) {
+      toast.error("Informe seu e-mail para reenviar a confirmação.");
       return;
     }
-    if (result.redirected) return;
-    navigate({ to: "/inicio", replace: true });
+    setLoading(true);
+    const { error } = await supabase.auth.resend({
+      type: "signup",
+      email: email.trim(),
+      options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
+    });
+    setLoading(false);
+    if (error) {
+      toast.error("Não conseguimos reenviar agora", { description: error.message });
+      return;
+    }
+    toast.success("Enviamos um novo link de confirmação.");
+  }
+
+  async function handleGoogle() {
+    setLoading(true);
+    // Evita ficar preso em "carregando" se a janela do Google for fechada/bloqueada.
+    const guard = window.setTimeout(() => setLoading(false), 45_000);
+    try {
+      const result = await lovable.auth.signInWithOAuth("google", {
+        redirect_uri: `${window.location.origin}/auth/callback`,
+      });
+      if (result.error) {
+        toast.error("Não foi possível entrar com o Google", {
+          description:
+            "A janela do Google foi fechada, bloqueada pelo navegador ou o acesso foi cancelado. Tente novamente.",
+        });
+        setLoading(false);
+        return;
+      }
+      if (result.redirected) return;
+      const { data } = await supabase.auth.getSession();
+      if (!data.session) {
+        toast.error("O Google respondeu, mas a sessão não ficou ativa. Tente novamente.");
+        setLoading(false);
+        return;
+      }
+      navigate({ to: "/inicio", replace: true });
+    } catch (error) {
+      toast.error("Não foi possível entrar com o Google", {
+        description: error instanceof Error ? error.message : undefined,
+      });
+      setLoading(false);
+    } finally {
+      window.clearTimeout(guard);
+    }
   }
 
   return (
