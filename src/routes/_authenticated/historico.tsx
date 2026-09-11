@@ -1,7 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
-import { ClipboardList } from "lucide-react";
+import { ClipboardList, FileSpreadsheet } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -17,8 +18,10 @@ import { PageHeader } from "@/components/app/PageHeader";
 import { EmptyState } from "@/components/app/EmptyState";
 import { supabase } from "@/integrations/supabase/client";
 import { isCoordinator, useSession } from "@/lib/session";
-import { fetchAnalyses } from "@/lib/reports";
-import { formatDateTime, formatPercent } from "@/lib/format";
+import { buildAnalysisSheets, fetchAnalyses, fetchInteractions } from "@/lib/reports";
+import { downloadXlsx } from "@/lib/excel";
+import { brDayKey, formatDateTime, formatPercent } from "@/lib/format";
+
 
 export const Route = createFileRoute("/_authenticated/historico")({
   head: () => ({
