@@ -163,9 +163,20 @@ function AuthPage() {
               Enviamos um link de confirmação para <strong>{email}</strong>. Abra o e-mail e clique
               no link para ativar sua conta.
             </p>
-            <Button variant="outline" onClick={() => setSentConfirmation(false)}>
-              Voltar
-            </Button>
+            <p className="text-xs text-muted-foreground">
+              O link chega de um remetente padrão e pode cair na caixa de spam ou promoções.
+              Enquanto a campanha não configurar um domínio de e-mail próprio, a entrega pode
+              demorar alguns minutos.
+            </p>
+            <div className="flex flex-wrap justify-center gap-2">
+              <Button onClick={handleResend} disabled={loading}>
+                {loading ? <Loader2 className="size-4 animate-spin" /> : null}
+                Reenviar e-mail
+              </Button>
+              <Button variant="outline" onClick={() => setSentConfirmation(false)}>
+                Voltar
+              </Button>
+            </div>
           </div>
         ) : (
           <div className="surface-card p-6">
