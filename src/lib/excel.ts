@@ -48,8 +48,9 @@ export async function downloadXlsx(sheets: SheetSpec[], fileName: string): Promi
 
   const data = usable.map((sheet) => toCells(sheet.rows, true));
 
-  const blob = (await writeXlsxFile(data as never, { sheets: names } as never)) as unknown as Blob;
+  const blob = await writeXlsxFile(data as never, { sheets: names } as never).toBlob();
   triggerDownload(blob, fileName.endsWith(".xlsx") ? fileName : `${fileName}.xlsx`);
+
 }
 
 function triggerDownload(blob: Blob, fileName: string): void {
