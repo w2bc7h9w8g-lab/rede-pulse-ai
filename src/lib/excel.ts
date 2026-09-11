@@ -51,12 +51,22 @@ export async function downloadXlsx(sheets: SheetSpec[], fileName: string): Promi
     data: toCells(sheet.rows, true),
   }));
 
-  const blob = (await writeXlsxFile(sheetsPayload as never)) as unknown as Blob;
+  const blob = await writeXlsxFile(sheetsPayload as never).toBlob();
+  triggerDownload(blob, fileName.endsWith(".xlsx") ? fileName : `${fileName}.xlsx`);
+
+
+}
+
+function triggerDownload(blob: Blob, fileName: string): void {
+  const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
-  link.href = URL.createObjectURL(blob);
-  link.download = fileName.endsWith(".xlsx") ? fileName : `${fileName}.xlsx`;
+  link.href = url;
+  link.download = fileName;
+  link.rel = "noopener";
+  document.body.appendChild(link);
   link.click();
-  URL.revokeObjectURL(link.href);
+  document.body.removeChild(link);
+  window.setTimeout(() => URL.revokeObjectURL(url), 10_000);
 }
 
 export function downloadCsv(rows: CellValue[][], fileName: string): void {
@@ -71,9 +81,6 @@ export function downloadCsv(rows: CellValue[][], fileName: string): void {
     )
     .join("\n");
   const blob = new Blob([`\uFEFF${csv}`], { type: "text/csv;charset=utf-8;" });
-  const link = document.createElement("a");
-  link.href = URL.createObjectURL(blob);
-  link.download = fileName.endsWith(".csv") ? fileName : `${fileName}.csv`;
-  link.click();
-  URL.revokeObjectURL(link.href);
+  triggerDownload(blob, fileName.endsWith(".csv") ? fileName : `${fileName}.csv`);
 }
+
