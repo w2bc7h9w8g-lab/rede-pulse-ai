@@ -55,17 +55,43 @@ function HistoryPage() {
       }),
   });
 
+  async function handleExport() {
+    if (!analyses || analyses.length === 0) {
+      toast.error("Não há análises para exportar.");
+      return;
+    }
+    setExporting(true);
+    try {
+      const interactions = await fetchInteractions(analyses.map((a) => a.id));
+      const sheets = buildAnalysisSheets(analyses, interactions);
+      await downloadXlsx(sheets, `redepulse-historico-${brDayKey(new Date())}`);
+      toast.success("Planilha gerada com uma aba por dia.");
+    } catch (error) {
+      toast.error("Não foi possível gerar a planilha", {
+        description: error instanceof Error ? error.message : undefined,
+      });
+    } finally {
+      setExporting(false);
+    }
+  }
+
   return (
     <>
       <PageHeader
         title="Histórico"
         description="Todas as análises feitas, da mais recente para a mais antiga."
         actions={
-          <Button asChild>
-            <Link to="/nova-analise">Nova análise</Link>
-          </Button>
+          <>
+            <Button variant="outline" onClick={handleExport} disabled={exporting}>
+              <FileSpreadsheet className="size-4" /> Baixar Excel
+            </Button>
+            <Button asChild>
+              <Link to="/nova-analise">Nova análise</Link>
+            </Button>
+          </>
         }
       />
+
 
       {coordinator ? (
         <div className="max-w-sm space-y-2">
