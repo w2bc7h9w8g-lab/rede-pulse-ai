@@ -12,8 +12,10 @@ import { PageHeader } from "@/components/app/PageHeader";
 import { EmptyState } from "@/components/app/EmptyState";
 import { supabase } from "@/integrations/supabase/client";
 import { isCoordinator, useSession } from "@/lib/session";
-import { formatNumber, formatPercent } from "@/lib/format";
+import { brDayKey, formatNumber, formatPercent } from "@/lib/format";
+import { downloadXlsx } from "@/lib/excel";
 import { fetchAnalyses } from "@/lib/reports";
+
 
 export const Route = createFileRoute("/_authenticated/equipe/")({
   head: () => ({
