@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/select";
 import { PageHeader } from "@/components/app/PageHeader";
 import { StatCard } from "@/components/app/StatCard";
+import { EmptyState } from "@/components/app/EmptyState";
 import { supabase } from "@/integrations/supabase/client";
 import { isCoordinator, useSession } from "@/lib/session";
 import { buildAnalysisSheets, fetchAnalyses, fetchInteractions } from "@/lib/reports";
@@ -177,7 +178,15 @@ function ReportsPage() {
         <StatCard label="Participação média" value={formatPercent(stats.avg)} />
       </div>
 
-      {isLoading ? <p className="text-sm text-muted-foreground">Carregando…</p> : null}
+      {isLoading ? (
+        <p className="text-sm text-muted-foreground">Carregando…</p>
+      ) : nenhumDado ? (
+        <EmptyState
+          icon={FileSpreadsheet}
+          title="Nenhuma análise no período"
+          description="Ajuste as datas ou o líder selecionado, ou faça uma nova análise para gerar a planilha."
+        />
+      ) : null}
 
       <p className="text-xs text-muted-foreground">
         A planilha inclui: dia, líder, publicação, participante, tipo de interação, texto do
