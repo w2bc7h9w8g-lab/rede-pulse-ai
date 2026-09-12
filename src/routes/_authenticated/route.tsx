@@ -5,6 +5,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@/lib/session";
 import { AppShell } from "@/components/app/AppShell";
 
+import type { SessionInfo } from "@/lib/session";
+
+/** Super admin é papel de plataforma: não precisa pertencer a uma campanha. */
+function needsOnboarding(session: SessionInfo): boolean {
+  if (session.role === "superadmin") return false;
+  return !session.role || !session.campaign;
+}
+
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
   beforeLoad: async () => {
