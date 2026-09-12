@@ -119,10 +119,10 @@ function ReportsPage() {
         description="Escolha o período e baixe a planilha. O Excel vem com um resumo e uma aba para cada dia."
         actions={
           <>
-            <Button variant="outline" onClick={handleCsv}>
+            <Button variant="outline" onClick={handleCsv} disabled={isLoading || nenhumDado}>
               <Download className="size-4" /> CSV
             </Button>
-            <Button onClick={handleExcel} disabled={exporting}>
+            <Button onClick={handleExcel} disabled={exporting || isLoading || nenhumDado}>
               {exporting ? (
                 <Loader2 className="size-4 animate-spin" />
               ) : (

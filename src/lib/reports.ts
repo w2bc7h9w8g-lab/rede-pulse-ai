@@ -188,6 +188,42 @@ export function buildAnalysisSheets(
       : 0,
   ]);
 
+  // Consolidação por líder
+  const byLeader = new Map<string, AnalysisRecord[]>();
+  for (const analysis of analyses) {
+    const key = analysis.leaders?.name ?? "Sem líder";
+    const list = byLeader.get(key) ?? [];
+    list.push(analysis);
+    byLeader.set(key, list);
+  }
+
+  if (byLeader.size > 0) {
+    summaryRows.push([]);
+    summaryRows.push([
+      "Líder",
+      "Análises",
+      "Dias com análise",
+      "Participantes identificados",
+      "Soma do tamanho das redes",
+      "Participação média (%)",
+    ]);
+    for (const [leaderName, list] of [...byLeader.entries()].sort((a, b) =>
+      a[0].localeCompare(b[0], "pt-BR"),
+    )) {
+      const leaderDays = new Set(list.map((a) => brDayKey(a.analyzed_at)));
+      const avgLeader =
+        list.reduce((sum, a) => sum + Number(a.participation_rate), 0) / list.length;
+      summaryRows.push([
+        leaderName,
+        list.length,
+        leaderDays.size,
+        list.reduce((sum, a) => sum + a.identified_participants_count, 0),
+        list.reduce((sum, a) => sum + a.network_size_snapshot, 0),
+        Number(avgLeader.toFixed(2)),
+      ]);
+    }
+  }
+
   const sheets: SheetSpec[] = [{ name: "Resumo", rows: summaryRows }];
 
   for (const day of orderedDays) {
