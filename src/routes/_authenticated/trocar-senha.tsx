@@ -26,7 +26,6 @@ function ChangePasswordPage() {
   const { data: session } = useSession();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const [current, setCurrent] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [saving, setSaving] = useState(false);
@@ -41,35 +40,22 @@ function ChangePasswordPage() {
       toast.error("As duas senhas digitadas não são iguais.");
       return;
     }
-    if (current && current === password) {
-      toast.error("A nova senha precisa ser diferente da atual.");
-      return;
-    }
+
     setSaving(true);
     try {
-      const { error } = await supabase.auth.updateUser({
-        password,
-        ...(current ? { current_password: current } : {}),
-      } as { password: string });
+      const { error } = await supabase.auth.updateUser({ password });
       if (error) {
-        const message = /current password/i.test(error.message)
-          ? "A senha atual está incorreta."
-          : /compromised|pwned|leaked/i.test(error.message)
-            ? "Essa senha já apareceu em vazamentos. Escolha outra."
-            : /different from the old/i.test(error.message)
-              ? "A nova senha precisa ser diferente da atual."
-              : error.message;
+        const message = /compromised|pwned|leaked/i.test(error.message)
+          ? "Essa senha já apareceu em vazamentos. Escolha outra."
+          : /different from the old/i.test(error.message)
+            ? "A nova senha precisa ser diferente da atual."
+            : error.message;
         toast.error("Não foi possível trocar a senha", { description: message });
         return;
       }
 
-      if (session?.userId) {
-        const { error: flagError } = await supabase
-          .from("profiles")
-          .update({ must_change_password: false })
-          .eq("id", session.userId);
-        if (flagError) throw flagError;
-      }
+      const { error: flagError } = await supabase.rpc("clear_must_change_password");
+      if (flagError) throw flagError;
 
       await queryClient.invalidateQueries({ queryKey: ["session"] });
       toast.success("Senha alterada! Acesso liberado.");
@@ -97,17 +83,6 @@ function ChangePasswordPage() {
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="atual">Senha atual</Label>
-              <Input
-                id="atual"
-                type="password"
-                autoComplete="current-password"
-                value={current}
-                onChange={(e) => setCurrent(e.target.value)}
-                placeholder="Sua senha de hoje"
-              />
-            </div>
-            <div className="space-y-2">
               <Label htmlFor="nova">Nova senha</Label>
               <Input
                 id="nova"
@@ -130,7 +105,7 @@ function ChangePasswordPage() {
                 onChange={(e) => setConfirm(e.target.value)}
               />
             </div>
-            <Button type="submit" className="w-full" disabled={saving}>
+            <Button type="submit" className="w-full" disabled={saving || !session}>
               {saving ? <Loader2 className="size-4 animate-spin" /> : null}
               Salvar nova senha
             </Button>
