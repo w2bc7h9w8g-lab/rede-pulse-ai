@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/select";
 import { PageHeader } from "@/components/app/PageHeader";
 import { StatCard } from "@/components/app/StatCard";
+import { EmptyState } from "@/components/app/EmptyState";
 import { supabase } from "@/integrations/supabase/client";
 import { isCoordinator, useSession } from "@/lib/session";
 import { buildAnalysisSheets, fetchAnalyses, fetchInteractions } from "@/lib/reports";
@@ -81,6 +82,8 @@ function ReportsPage() {
     };
   }, [analyses]);
 
+  const nenhumDado = !isLoading && (analyses ?? []).length === 0;
+
   async function handleExcel() {
     if (!analyses || analyses.length === 0) {
       toast.error("Não há análises no período selecionado.");
@@ -119,10 +122,10 @@ function ReportsPage() {
         description="Escolha o período e baixe a planilha. O Excel vem com um resumo e uma aba para cada dia."
         actions={
           <>
-            <Button variant="outline" onClick={handleCsv}>
+            <Button variant="outline" onClick={handleCsv} disabled={isLoading || nenhumDado}>
               <Download className="size-4" /> CSV
             </Button>
-            <Button onClick={handleExcel} disabled={exporting}>
+            <Button onClick={handleExcel} disabled={exporting || isLoading || nenhumDado}>
               {exporting ? (
                 <Loader2 className="size-4 animate-spin" />
               ) : (
@@ -175,7 +178,15 @@ function ReportsPage() {
         <StatCard label="Participação média" value={formatPercent(stats.avg)} />
       </div>
 
-      {isLoading ? <p className="text-sm text-muted-foreground">Carregando…</p> : null}
+      {isLoading ? (
+        <p className="text-sm text-muted-foreground">Carregando…</p>
+      ) : nenhumDado ? (
+        <EmptyState
+          icon={FileSpreadsheet}
+          title="Nenhuma análise no período"
+          description="Ajuste as datas ou o líder selecionado, ou faça uma nova análise para gerar a planilha."
+        />
+      ) : null}
 
       <p className="text-xs text-muted-foreground">
         A planilha inclui: dia, líder, publicação, participante, tipo de interação, texto do
