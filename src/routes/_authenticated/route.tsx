@@ -51,7 +51,7 @@ function AuthenticatedLayout() {
     );
   }
 
-  if (!session.role || !session.campaign) {
+  if (session.mustChangePassword || needsOnboarding(session)) {
     return (
       <div className="min-h-screen bg-background">
         <Outlet />
