@@ -41,7 +41,7 @@ export class DemoInstagramProvider implements InstagramProvider {
 
     request.networkUsernames.forEach((username, index) => {
       const score = hash(`${seed}:${username}`) % 100;
-      if (score >= 22) return; // ~22% da rede participa na demonstração
+      if (score >= 22) return;
       const isMention = score % 5 === 0;
       interactions.push({
         username,
@@ -54,7 +54,6 @@ export class DemoInstagramProvider implements InstagramProvider {
       });
     });
 
-    // interações de pessoas fora da rede (existem no post, mas não são da rede do líder)
     const outsiders = 5 + (seed % 12);
 
     return {
@@ -74,12 +73,7 @@ export class DemoInstagramProvider implements InstagramProvider {
   }
 }
 
-/**
- * Provedor oficial Meta/Instagram Graph API.
- * Estrutura pronta: o token fica exclusivamente no servidor e nunca no navegador.
- * Enquanto a conta profissional da campanha não estiver conectada com credenciais
- * válidas da Meta, este provedor recusa a execução em vez de inventar dados.
- */
+/** Provedor oficial Meta/Instagram Graph API. */
 export class MetaGraphProvider implements InstagramProvider {
   readonly id = "meta_graph" as const;
 
@@ -103,18 +97,8 @@ export class MetaGraphProvider implements InstagramProvider {
       );
     }
 
-    const commentsRes = await fetch(
-      `${base}/${mediaId}/comments?fields=id,text,timestamp,username&limit=200&access_token=${this.accessToken}`,
-    );
-    if (!commentsRes.ok) {
-      const body = await commentsRes.text();
-      throw new Error(`Instagram Graph API [${commentsRes.status}]: ${body}`);
-    }
-    const commentsJson = (await commentsRes.json()) as {
-      data?: Array<{ id: string; text?: string; timestamp?: string; username?: string }>;
-    };
-
-    const interactions: ProviderInteraction[] = (commentsJson.data ?? [])
+    const comments = await this.fetchAllComments(base, mediaId);
+    const interactions: ProviderInteraction[] = comments
       .filter((c) => Boolean(c.username))
       .map((c) => ({
         username: String(c.username).toLowerCase(),
@@ -124,8 +108,8 @@ export class MetaGraphProvider implements InstagramProvider {
         externalId: c.id,
       }));
 
-    const mediaRes = await fetch(
-      `${base}/${mediaId}?fields=id,caption,timestamp,like_count,comments_count&access_token=${this.accessToken}`,
+    const mediaRes = await this.graphFetch(
+      `${base}/${mediaId}?fields=id,caption,timestamp,like_count,comments_count`,
     );
     const media = mediaRes.ok
       ? ((await mediaRes.json()) as {
@@ -152,15 +136,56 @@ export class MetaGraphProvider implements InstagramProvider {
     };
   }
 
+  private async graphFetch(url: string): Promise<Response> {
+    if (!this.accessToken) throw new ProviderNotConfiguredError("Token da Meta não configurado.");
+    return fetch(url, {
+      headers: {
+        Authorization: `Bearer ${this.accessToken}`,
+        Accept: "application/json",
+      },
+    });
+  }
+
   private async resolveMediaId(base: string, request: ProviderRequest): Promise<string | null> {
     if (!request.shortcode) return null;
-    const res = await fetch(
-      `${base}/${this.externalAccountId}/media?fields=id,permalink&limit=100&access_token=${this.accessToken}`,
-    );
-    if (!res.ok) return null;
-    const json = (await res.json()) as { data?: Array<{ id: string; permalink?: string }> };
-    const found = (json.data ?? []).find((m) => m.permalink?.includes(request.shortcode ?? "@@"));
-    return found?.id ?? null;
+
+    let url = `${base}/${this.externalAccountId}/media?fields=id,permalink&limit=100`;
+    for (let page = 0; page < 20 && url; page += 1) {
+      const res = await this.graphFetch(url);
+      if (!res.ok) return null;
+      const json = (await res.json()) as {
+        data?: Array<{ id: string; permalink?: string }>;
+        paging?: { next?: string };
+      };
+      const found = (json.data ?? []).find((m) => m.permalink?.includes(request.shortcode ?? "@@"));
+      if (found) return found.id;
+      url = json.paging?.next ?? "";
+    }
+    return null;
+  }
+
+  private async fetchAllComments(
+    base: string,
+    mediaId: string,
+  ): Promise<Array<{ id: string; text?: string; timestamp?: string; username?: string }>> {
+    const comments: Array<{ id: string; text?: string; timestamp?: string; username?: string }> = [];
+    let url = `${base}/${mediaId}/comments?fields=id,text,timestamp,username&limit=200`;
+
+    for (let page = 0; page < 50 && url; page += 1) {
+      const res = await this.graphFetch(url);
+      if (!res.ok) {
+        const body = await res.text();
+        throw new Error(`Instagram Graph API [${res.status}]: ${body}`);
+      }
+      const json = (await res.json()) as {
+        data?: Array<{ id: string; text?: string; timestamp?: string; username?: string }>;
+        paging?: { next?: string };
+      };
+      comments.push(...(json.data ?? []));
+      url = json.paging?.next ?? "";
+    }
+
+    return comments;
   }
 }
 
@@ -170,12 +195,20 @@ export type ConnectionRow = {
   token_secret_name: string | null;
 };
 
-export function resolveProvider(connection: ConnectionRow | null): InstagramProvider {
+export function resolveProvider(
+  connection: ConnectionRow | null,
+  options: { allowDemo: boolean } = { allowDemo: false },
+): InstagramProvider {
   if (connection?.status === "connected" && connection.external_account_id) {
     const token = connection.token_secret_name
       ? process.env[connection.token_secret_name]
       : process.env["META_INSTAGRAM_ACCESS_TOKEN"];
     return new MetaGraphProvider(token, connection.external_account_id);
   }
-  return new DemoInstagramProvider();
+
+  if (options.allowDemo) return new DemoInstagramProvider();
+
+  throw new ProviderNotConfiguredError(
+    "A conta profissional do Instagram da campanha ainda não está conectada.",
+  );
 }
