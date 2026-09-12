@@ -3,8 +3,6 @@ ALTER TABLE public.profiles
   ADD COLUMN IF NOT EXISTS must_change_password BOOLEAN NOT NULL DEFAULT false;
 
 -- Clear the first-login flag only for the currently authenticated user.
--- This is intentionally a SECURITY DEFINER RPC so the profile RLS policy does
--- not need to allow arbitrary clients to change an authorization/onboarding flag.
 CREATE OR REPLACE FUNCTION public.clear_must_change_password()
 RETURNS VOID
 LANGUAGE plpgsql
@@ -27,7 +25,7 @@ REVOKE EXECUTE ON FUNCTION public.clear_must_change_password() FROM PUBLIC, anon
 GRANT EXECUTE ON FUNCTION public.clear_must_change_password() TO authenticated;
 
 -- Users must never be able to move their own profile into another campaign or
--- clear the administrative first-login flag through the generic profile update.
+-- change the administrative first-login flag through the generic profile update.
 DROP POLICY IF EXISTS profiles_update_own ON public.profiles;
 CREATE POLICY profiles_update_own ON public.profiles
   FOR UPDATE TO authenticated
@@ -48,9 +46,9 @@ DROP POLICY IF EXISTS instagram_connections_select ON public.instagram_connectio
 CREATE POLICY instagram_connections_select ON public.instagram_connections
   FOR SELECT TO authenticated
   USING (
-    private.is_superadmin()
+    public.is_superadmin()
     OR (
-      campaign_id = private.current_campaign_id()
-      AND private.is_coordinator()
+      campaign_id = public.current_campaign_id()
+      AND public.is_coordinator()
     )
   );
