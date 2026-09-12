@@ -48,9 +48,9 @@ DROP POLICY IF EXISTS instagram_connections_select ON public.instagram_connectio
 CREATE POLICY instagram_connections_select ON public.instagram_connections
   FOR SELECT TO authenticated
   USING (
-    public.is_superadmin()
+    private.is_superadmin()
     OR (
-      campaign_id = public.current_campaign_id()
-      AND public.is_coordinator()
+      campaign_id = private.current_campaign_id()
+      AND private.is_coordinator()
     )
   );
