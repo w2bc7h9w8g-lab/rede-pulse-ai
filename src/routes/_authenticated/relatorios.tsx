@@ -81,6 +81,8 @@ function ReportsPage() {
     };
   }, [analyses]);
 
+  const nenhumDado = !isLoading && (analyses ?? []).length === 0;
+
   async function handleExcel() {
     if (!analyses || analyses.length === 0) {
       toast.error("Não há análises no período selecionado.");
