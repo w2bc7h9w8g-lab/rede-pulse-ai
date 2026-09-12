@@ -26,7 +26,11 @@ function AuthenticatedLayout() {
       navigate({ to: "/auth", replace: true });
       return;
     }
-    if ((!session.role || !session.campaign) && pathname !== "/bem-vindo") {
+    if (session.mustChangePassword) {
+      if (pathname !== "/trocar-senha") navigate({ to: "/trocar-senha", replace: true });
+      return;
+    }
+    if (needsOnboarding(session) && pathname !== "/bem-vindo") {
       navigate({ to: "/bem-vindo", replace: true });
     }
   }, [isLoading, session, navigate, pathname]);
