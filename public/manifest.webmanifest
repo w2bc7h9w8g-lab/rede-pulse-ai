@@ -1,0 +1,27 @@
+{
+  "name": "RedePulse",
+  "short_name": "RedePulse",
+  "description": "Organize a campanha e identifique a participação da sua rede em publicações.",
+  "lang": "pt-BR",
+  "dir": "ltr",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#ffffff",
+  "theme_color": "#111827",
+  "icons": [
+    {
+      "src": "/pwa-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/pwa-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ]
+}
