@@ -26,13 +26,16 @@ export const runAnalysis = createServerFn({ method: "POST" })
 
     const { data: leader, error: leaderError } = await supabase
       .from("leaders")
-      .select("id, campaign_id, name")
+      .select("id, campaign_id, name, campaigns(is_demo)")
       .eq("id", data.leaderId)
       .maybeSingle();
     if (leaderError) throw new Error(leaderError.message);
     if (!leader) throw new Error("Líder não encontrado ou fora da sua campanha.");
 
     const campaignId = leader.campaign_id;
+    const campaignIsDemo = Boolean(
+      Array.isArray(leader.campaigns) ? leader.campaigns[0]?.is_demo : leader.campaigns?.is_demo,
+    );
 
     const { data: members, error: membersError } = await supabase
       .from("network_members")
@@ -54,15 +57,93 @@ export const runAnalysis = createServerFn({ method: "POST" })
 
     const { resolveProvider } = await import("./instagram/provider.server");
     const { ProviderNotConfiguredError } = await import("./instagram/types");
-    const provider = resolveProvider(connection ?? null);
 
-    let result;
+    let provider;
     try {
-      result = await provider.fetchInteractions({
+      provider = resolveProvider(connection ?? null, { allowDemo: campaignIsDemo });
+      const result = await provider.fetchInteractions({
         url: parsed.url,
         shortcode: parsed.shortcode,
         networkUsernames,
       });
+
+      let postId: string | null = null;
+      if (parsed.shortcode) {
+        const { data: post } = await supabase
+          .from("posts")
+          .upsert(
+            {
+              campaign_id: campaignId,
+              shortcode: parsed.shortcode,
+              url: parsed.url,
+              external_post_id: result.metrics.externalPostId,
+              caption: result.metrics.caption,
+              published_at: result.metrics.publishedAt,
+              likes_count: result.metrics.likesCount,
+              comments_count: result.metrics.commentsCount,
+              shares_count: result.metrics.sharesCount,
+              reach: result.metrics.reach,
+              impressions: result.metrics.impressions,
+            },
+            { onConflict: "campaign_id,shortcode" },
+          )
+          .select("id")
+          .single();
+        postId = post?.id ?? null;
+      }
+
+      const networkSet = new Set(networkUsernames.map((u) => u.toLowerCase()));
+      const matched = result.interactions.filter((i) => networkSet.has(i.username.toLowerCase()));
+      const uniqueParticipants = new Set(matched.map((i) => i.username.toLowerCase()));
+      const networkSize = networkUsernames.length;
+      const rate = networkSize > 0 ? (uniqueParticipants.size / networkSize) * 100 : 0;
+
+      const { data: analysis, error: analysisError } = await supabase
+        .from("analyses")
+        .insert({
+          campaign_id: campaignId,
+          leader_id: leader.id,
+          post_id: postId,
+          created_by: userId,
+          url: parsed.url,
+          shortcode: parsed.shortcode,
+          status: "completed",
+          source: result.source,
+          network_size_snapshot: networkSize,
+          identified_participants_count: uniqueParticipants.size,
+          participation_rate: Number(rate.toFixed(2)),
+        })
+        .select("id")
+        .single();
+      if (analysisError || !analysis) {
+        throw new Error(analysisError?.message ?? "Não foi possível salvar a análise.");
+      }
+
+      if (matched.length > 0) {
+        const rows = matched.map((i) => ({
+          campaign_id: campaignId,
+          analysis_id: analysis.id,
+          leader_id: leader.id,
+          network_member_id: memberByUsername.get(i.username.toLowerCase()) ?? null,
+          instagram_username: i.username,
+          interaction_type: i.interactionType,
+          comment_text: i.commentText,
+          interacted_at: i.interactedAt,
+          raw_external_id: i.externalId,
+        }));
+        const { error: resultsError } = await supabase.from("interaction_results").insert(rows);
+        if (resultsError) throw new Error(resultsError.message);
+      }
+
+      await supabase.from("audit_logs").insert({
+        campaign_id: campaignId,
+        user_id: userId,
+        action: "analysis.run",
+        entity_type: "analysis",
+        entity_id: analysis.id,
+      });
+
+      return { analysisId: analysis.id, status: "completed", source: result.source };
     } catch (error) {
       const message =
         error instanceof ProviderNotConfiguredError
@@ -77,7 +158,7 @@ export const runAnalysis = createServerFn({ method: "POST" })
           url: parsed.url,
           shortcode: parsed.shortcode,
           status: "failed",
-          source: provider.id,
+          source: provider?.id ?? (campaignIsDemo ? "demo" : "meta_graph"),
           error_message: message,
           network_size_snapshot: networkUsernames.length,
         })
@@ -86,87 +167,8 @@ export const runAnalysis = createServerFn({ method: "POST" })
       return {
         analysisId: failed?.id ?? "",
         status: "failed",
-        source: provider.id,
+        source: provider?.id ?? (campaignIsDemo ? "demo" : "meta_graph"),
         message,
       };
     }
-
-    // registra/atualiza a publicação
-    let postId: string | null = null;
-    if (parsed.shortcode) {
-      const { data: post } = await supabase
-        .from("posts")
-        .upsert(
-          {
-            campaign_id: campaignId,
-            shortcode: parsed.shortcode,
-            url: parsed.url,
-            external_post_id: result.metrics.externalPostId,
-            caption: result.metrics.caption,
-            published_at: result.metrics.publishedAt,
-            likes_count: result.metrics.likesCount,
-            comments_count: result.metrics.commentsCount,
-            shares_count: result.metrics.sharesCount,
-            reach: result.metrics.reach,
-            impressions: result.metrics.impressions,
-          },
-          { onConflict: "campaign_id,shortcode" },
-        )
-        .select("id")
-        .single();
-      postId = post?.id ?? null;
-    }
-
-    const networkSet = new Set(networkUsernames.map((u) => u.toLowerCase()));
-    const matched = result.interactions.filter((i) => networkSet.has(i.username.toLowerCase()));
-    const uniqueParticipants = new Set(matched.map((i) => i.username.toLowerCase()));
-    const networkSize = networkUsernames.length;
-    const rate = networkSize > 0 ? (uniqueParticipants.size / networkSize) * 100 : 0;
-
-    const { data: analysis, error: analysisError } = await supabase
-      .from("analyses")
-      .insert({
-        campaign_id: campaignId,
-        leader_id: leader.id,
-        post_id: postId,
-        created_by: userId,
-        url: parsed.url,
-        shortcode: parsed.shortcode,
-        status: "completed",
-        source: result.source,
-        network_size_snapshot: networkSize,
-        identified_participants_count: uniqueParticipants.size,
-        participation_rate: Number(rate.toFixed(2)),
-      })
-      .select("id")
-      .single();
-    if (analysisError || !analysis) {
-      throw new Error(analysisError?.message ?? "Não foi possível salvar a análise.");
-    }
-
-    if (matched.length > 0) {
-      const rows = matched.map((i) => ({
-        campaign_id: campaignId,
-        analysis_id: analysis.id,
-        leader_id: leader.id,
-        network_member_id: memberByUsername.get(i.username.toLowerCase()) ?? null,
-        instagram_username: i.username,
-        interaction_type: i.interactionType,
-        comment_text: i.commentText,
-        interacted_at: i.interactedAt,
-        raw_external_id: i.externalId,
-      }));
-      const { error: resultsError } = await supabase.from("interaction_results").insert(rows);
-      if (resultsError) throw new Error(resultsError.message);
-    }
-
-    await supabase.from("audit_logs").insert({
-      campaign_id: campaignId,
-      user_id: userId,
-      action: "analysis.run",
-      entity_type: "analysis",
-      entity_id: analysis.id,
-    });
-
-    return { analysisId: analysis.id, status: "completed", source: result.source };
   });
