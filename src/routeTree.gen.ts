@@ -19,6 +19,7 @@ import { Route as AuthenticatedInicioRouteImport } from './routes/_authenticated
 import { Route as AuthenticatedMinhaRedeRouteImport } from './routes/_authenticated/minha-rede'
 import { Route as AuthenticatedNovaAnaliseRouteImport } from './routes/_authenticated/nova-analise'
 import { Route as AuthenticatedRelatoriosRouteImport } from './routes/_authenticated/relatorios'
+import { Route as AuthenticatedTrocarSenhaRouteImport } from './routes/_authenticated/trocar-senha'
 import { Route as AuthCallbackRouteImport } from './routes/auth_.callback'
 import { Route as AuthenticatedAnaliseIdRouteImport } from './routes/_authenticated/analise.$id'
 import { Route as AuthenticatedEquipeIndexRouteImport } from './routes/_authenticated/equipe.index'
@@ -75,6 +76,12 @@ const AuthenticatedRelatoriosRoute = AuthenticatedRelatoriosRouteImport.update({
   path: '/relatorios',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedTrocarSenhaRoute =
+  AuthenticatedTrocarSenhaRouteImport.update({
+    id: '/trocar-senha',
+    path: '/trocar-senha',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthCallbackRoute = AuthCallbackRouteImport.update({
   id: '/auth_/callback',
   path: '/auth/callback',
@@ -108,6 +115,7 @@ export interface FileRoutesByFullPath {
   '/minha-rede': typeof AuthenticatedMinhaRedeRoute
   '/nova-analise': typeof AuthenticatedNovaAnaliseRoute
   '/relatorios': typeof AuthenticatedRelatoriosRoute
+  '/trocar-senha': typeof AuthenticatedTrocarSenhaRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/analise/$id': typeof AuthenticatedAnaliseIdRoute
   '/equipe/$leaderId': typeof AuthenticatedEquipeLeaderIdRoute
@@ -123,6 +131,7 @@ export interface FileRoutesByTo {
   '/minha-rede': typeof AuthenticatedMinhaRedeRoute
   '/nova-analise': typeof AuthenticatedNovaAnaliseRoute
   '/relatorios': typeof AuthenticatedRelatoriosRoute
+  '/trocar-senha': typeof AuthenticatedTrocarSenhaRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/analise/$id': typeof AuthenticatedAnaliseIdRoute
   '/equipe/$leaderId': typeof AuthenticatedEquipeLeaderIdRoute
@@ -140,6 +149,7 @@ export interface FileRoutesById {
   '/_authenticated/minha-rede': typeof AuthenticatedMinhaRedeRoute
   '/_authenticated/nova-analise': typeof AuthenticatedNovaAnaliseRoute
   '/_authenticated/relatorios': typeof AuthenticatedRelatoriosRoute
+  '/_authenticated/trocar-senha': typeof AuthenticatedTrocarSenhaRoute
   '/auth_/callback': typeof AuthCallbackRoute
   '/_authenticated/analise/$id': typeof AuthenticatedAnaliseIdRoute
   '/_authenticated/equipe/$leaderId': typeof AuthenticatedEquipeLeaderIdRoute
@@ -157,6 +167,7 @@ export interface FileRouteTypes {
     | '/minha-rede'
     | '/nova-analise'
     | '/relatorios'
+    | '/trocar-senha'
     | '/auth/callback'
     | '/analise/$id'
     | '/equipe/$leaderId'
@@ -172,6 +183,7 @@ export interface FileRouteTypes {
     | '/minha-rede'
     | '/nova-analise'
     | '/relatorios'
+    | '/trocar-senha'
     | '/auth/callback'
     | '/analise/$id'
     | '/equipe/$leaderId'
@@ -188,6 +200,7 @@ export interface FileRouteTypes {
     | '/_authenticated/minha-rede'
     | '/_authenticated/nova-analise'
     | '/_authenticated/relatorios'
+    | '/_authenticated/trocar-senha'
     | '/auth_/callback'
     | '/_authenticated/analise/$id'
     | '/_authenticated/equipe/$leaderId'
@@ -273,6 +286,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedRelatoriosRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/trocar-senha': {
+      id: '/_authenticated/trocar-senha'
+      path: '/trocar-senha'
+      fullPath: '/trocar-senha'
+      preLoaderRoute: typeof AuthenticatedTrocarSenhaRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/auth_/callback': {
       id: '/auth_/callback'
       path: '/auth/callback'
@@ -312,6 +332,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedMinhaRedeRoute: typeof AuthenticatedMinhaRedeRoute
   AuthenticatedNovaAnaliseRoute: typeof AuthenticatedNovaAnaliseRoute
   AuthenticatedRelatoriosRoute: typeof AuthenticatedRelatoriosRoute
+  AuthenticatedTrocarSenhaRoute: typeof AuthenticatedTrocarSenhaRoute
   AuthenticatedAnaliseIdRoute: typeof AuthenticatedAnaliseIdRoute
   AuthenticatedEquipeLeaderIdRoute: typeof AuthenticatedEquipeLeaderIdRoute
   AuthenticatedEquipeIndexRoute: typeof AuthenticatedEquipeIndexRoute
@@ -325,6 +346,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedMinhaRedeRoute: AuthenticatedMinhaRedeRoute,
   AuthenticatedNovaAnaliseRoute: AuthenticatedNovaAnaliseRoute,
   AuthenticatedRelatoriosRoute: AuthenticatedRelatoriosRoute,
+  AuthenticatedTrocarSenhaRoute: AuthenticatedTrocarSenhaRoute,
   AuthenticatedAnaliseIdRoute: AuthenticatedAnaliseIdRoute,
   AuthenticatedEquipeLeaderIdRoute: AuthenticatedEquipeLeaderIdRoute,
   AuthenticatedEquipeIndexRoute: AuthenticatedEquipeIndexRoute,

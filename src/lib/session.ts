@@ -30,7 +30,11 @@ export async function loadSession(): Promise<SessionInfo | null> {
   });
 
   const [{ data: profile }, { data: roles }, { data: leader }] = await Promise.all([
-    supabase.from("profiles").select("name, email, campaign_id").eq("id", user.id).maybeSingle(),
+    supabase
+      .from("profiles")
+      .select("name, email, campaign_id, must_change_password")
+      .eq("id", user.id)
+      .maybeSingle(),
     supabase.from("user_roles").select("role").eq("user_id", user.id),
     supabase.from("leaders").select("id, name").eq("user_id", user.id).maybeSingle(),
   ]);
@@ -62,6 +66,7 @@ export async function loadSession(): Promise<SessionInfo | null> {
     campaign,
     leaderId: leader?.id ?? null,
     leaderName: leader?.name ?? null,
+    mustChangePassword: profile?.must_change_password ?? false,
   };
 }
 
