@@ -1,3 +1,5 @@
+/* prettier-ignore-file */
+
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
@@ -74,11 +76,7 @@ function NetworkPage() {
   const { data: leaders } = useQuery({
     queryKey: ["leaders-select"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("leaders")
-        .select("id, name")
-        .eq("status", "active")
-        .order("name");
+      const { data, error } = await supabase.from("leaders").select("id, name").eq("status", "active").order("name");
       if (error) throw error;
       return data ?? [];
     },
@@ -93,11 +91,7 @@ function NetworkPage() {
     queryKey: ["network", leaderId],
     enabled: Boolean(leaderId),
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("network_members")
-        .select("id, instagram_username, display_name, active, created_at")
-        .eq("leader_id", leaderId)
-        .order("instagram_username");
+      const { data, error } = await supabase.from("network_members").select("id, instagram_username, display_name, active, created_at").eq("leader_id", leaderId).order("instagram_username");
       if (error) throw error;
       return data ?? [];
     },
@@ -107,14 +101,11 @@ function NetworkPage() {
     queryKey: ["network-participation", leaderId],
     enabled: Boolean(leaderId),
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("interaction_results")
-        .select("network_member_id, created_at, analysis_id")
-        .eq("leader_id", leaderId)
-        .order("created_at", { ascending: false });
+      const { data, error } = await supabase.from("interaction_results").select("network_member_id, created_at").eq("leader_id", leaderId).order("created_at", { ascending: false });
       if (error) throw error;
       const map = new Map<string, { count: number; last: string | null }>();
       for (const row of data ?? []) {
+        if (!row.network_member_id) continue;
         const current = map.get(row.network_member_id) ?? { count: 0, last: null };
         current.count += 1;
         if (!current.last) current.last = row.created_at;
@@ -124,18 +115,15 @@ function NetworkPage() {
     },
   });
 
-  const leaderName =
-    session?.leaderName ?? leaders?.find((l) => l.id === leaderId)?.name ?? "Líder";
+  const leaderName = session?.leaderName ?? leaders?.find((l) => l.id === leaderId)?.name ?? "Líder";
 
   const filtered = useMemo(() => {
     const term = search.trim().toLowerCase();
     return (members ?? []).filter((m) => {
       const activity = participation?.get(m.id);
-      const matchesSearch =
-        !term || m.instagram_username.includes(term) || (m.display_name ?? "").toLowerCase().includes(term);
+      const matchesSearch = !term || m.instagram_username.includes(term) || (m.display_name ?? "").toLowerCase().includes(term);
       const matchesStatus = statusFilter === "all" || (statusFilter === "active" ? m.active : !m.active);
-      const matchesActivity =
-        activityFilter === "all" || (activityFilter === "participated" ? Boolean(activity?.count) : !activity?.count);
+      const matchesActivity = activityFilter === "all" || (activityFilter === "participated" ? Boolean(activity?.count) : !activity?.count);
       return matchesSearch && matchesStatus && matchesActivity;
     });
   }, [members, participation, search, statusFilter, activityFilter]);
@@ -152,24 +140,12 @@ function NetworkPage() {
     }
     setSaving(true);
     try {
-      const payload = rows.map((row) => ({
-        campaign_id: session.campaign!.id,
-        leader_id: leaderId,
-        instagram_username: row.username,
-        display_name: row.name?.trim() || null,
-      }));
-      const { data, error } = await supabase
-        .from("network_members")
-        .upsert(payload, { onConflict: "leader_id,instagram_username", ignoreDuplicates: true })
-        .select("id");
+      const payload = rows.map((row) => ({ campaign_id: session.campaign!.id, leader_id: leaderId, instagram_username: row.username, display_name: row.name?.trim() || null }));
+      const { data, error } = await supabase.from("network_members").upsert(payload, { onConflict: "leader_id,instagram_username", ignoreDuplicates: true }).select("id");
       if (error) throw error;
       const added = data?.length ?? 0;
       const skipped = rows.length - added;
-      toast.success(
-        added === 0
-          ? "Esses perfis já estavam na sua rede."
-          : `${added} perfil(is) adicionado(s)${skipped > 0 ? `, ${skipped} já existia(m)` : ""}.`,
-      );
+      toast.success(added === 0 ? "Esses perfis já estavam na sua rede." : `${added} perfil(is) adicionado(s)${skipped > 0 ? `, ${skipped} já existia(m)` : ""}.`);
       await queryClient.invalidateQueries({ queryKey: ["network", leaderId] });
       setSingle("");
       setSingleName("");
@@ -227,10 +203,7 @@ function NetworkPage() {
     }
     setSaving(true);
     try {
-      const { error } = await supabase
-        .from("network_members")
-        .update({ instagram_username: username, display_name: editing.name.trim() || null, active: editing.active })
-        .eq("id", editing.id);
+      const { error } = await supabase.from("network_members").update({ instagram_username: username, display_name: editing.name.trim() || null, active: editing.active }).eq("id", editing.id);
       if (error) throw error;
       toast.success("Perfil atualizado.");
       setEditing(null);
@@ -269,94 +242,16 @@ function NetworkPage() {
 
   return (
     <>
-      <PageHeader
-        title="Minha rede"
-        description="Cadastre os @ das pessoas da sua rede. Só quem estiver aqui é contado nas análises."
-        actions={
-          <>
-            <Button variant="outline" onClick={exportCsv} disabled={(members ?? []).length === 0}><Download className="size-4" /> CSV</Button>
-            <Button variant="outline" onClick={exportExcel} disabled={(members ?? []).length === 0}><FileSpreadsheet className="size-4" /> Excel</Button>
-          </>
-        }
-      />
-
-      {coordinator && !session?.leaderId ? (
-        <div className="max-w-sm space-y-2">
-          <Label>Rede do líder</Label>
-          <Select value={leaderId} onValueChange={setLeaderId}>
-            <SelectTrigger><SelectValue placeholder="Escolha um líder" /></SelectTrigger>
-            <SelectContent>{(leaders ?? []).map((leader) => <SelectItem key={leader.id} value={leader.id}>{leader.name}</SelectItem>)}</SelectContent>
-          </Select>
-        </div>
-      ) : null}
-
-      <div className="grid gap-4 sm:grid-cols-3">
-        <Card><CardContent className="pt-5"><p className="text-sm text-muted-foreground">Total</p><p className="text-2xl font-semibold">{(members ?? []).length}</p></CardContent></Card>
-        <Card><CardContent className="pt-5"><p className="text-sm text-muted-foreground">Ativas</p><p className="text-2xl font-semibold">{activeCount}</p></CardContent></Card>
-        <Card><CardContent className="pt-5"><p className="text-sm text-muted-foreground">Participação identificada</p><p className="text-2xl font-semibold">{participatedCount} <span className="text-sm font-normal text-muted-foreground">· {neverCount} nunca identificadas</span></p></CardContent></Card>
-      </div>
-
+      <PageHeader title="Minha rede" description="Cadastre os @ das pessoas da sua rede. Só quem estiver aqui é contado nas análises." actions={<><Button variant="outline" onClick={exportCsv} disabled={(members ?? []).length === 0}><Download className="size-4" /> CSV</Button><Button variant="outline" onClick={exportExcel} disabled={(members ?? []).length === 0}><FileSpreadsheet className="size-4" /> Excel</Button></>} />
+      {coordinator && !session?.leaderId ? <div className="max-w-sm space-y-2"><Label>Rede do líder</Label><Select value={leaderId} onValueChange={setLeaderId}><SelectTrigger><SelectValue placeholder="Escolha um líder" /></SelectTrigger><SelectContent>{(leaders ?? []).map((leader) => <SelectItem key={leader.id} value={leader.id}>{leader.name}</SelectItem>)}</SelectContent></Select></div> : null}
+      <div className="grid gap-4 sm:grid-cols-3"><Card><CardContent className="pt-5"><p className="text-sm text-muted-foreground">Total</p><p className="text-2xl font-semibold">{(members ?? []).length}</p></CardContent></Card><Card><CardContent className="pt-5"><p className="text-sm text-muted-foreground">Ativas</p><p className="text-2xl font-semibold">{activeCount}</p></CardContent></Card><Card><CardContent className="pt-5"><p className="text-sm text-muted-foreground">Participação identificada</p><p className="text-2xl font-semibold">{participatedCount} <span className="text-sm font-normal text-muted-foreground">· {neverCount} nunca identificadas</span></p></CardContent></Card></div>
       <div className="grid gap-4 lg:grid-cols-2">
-        <Card>
-          <CardHeader><CardTitle className="text-base">Adicionar uma pessoa</CardTitle></CardHeader>
-          <CardContent><form onSubmit={handleSingle} className="space-y-4">
-            <div className="space-y-2"><Label htmlFor="perfil">@ do Instagram</Label><Input id="perfil" value={single} onChange={(e) => setSingle(e.target.value)} placeholder="@joaodasilva" /></div>
-            <div className="space-y-2"><Label htmlFor="nome-membro">Nome (opcional)</Label><Input id="nome-membro" value={singleName} onChange={(e) => setSingleName(e.target.value)} placeholder="João da Silva" /></div>
-            <Button type="submit" disabled={saving}>{saving ? <Loader2 className="size-4 animate-spin" /> : <UserPlus className="size-4" />}Adicionar</Button>
-          </form></CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader><CardTitle className="text-base">Adicionar vários de uma vez</CardTitle></CardHeader>
-          <CardContent><form onSubmit={handleBulk} className="space-y-4">
-            <div className="space-y-2"><Label htmlFor="lista">Cole a lista de @</Label><Textarea id="lista" rows={6} value={bulk} onChange={(e) => setBulk(e.target.value)} placeholder={"@maria\n@joao, @ana\nhttps://instagram.com/pedro"} /><p className="text-xs text-muted-foreground">Pode colar um por linha, separados por vírgula ou copiados de uma planilha.</p></div>
-            <div className="space-y-2"><Label htmlFor="arquivo">Ou envie um arquivo CSV/TXT</Label><Input id="arquivo" type="file" accept=".csv,.txt" onChange={handleFile} /></div>
-            {preview ? <p className="text-sm text-muted-foreground"><strong className="text-foreground">{preview.valid.length}</strong> perfis prontos para adicionar{preview.duplicatesInInput > 0 ? ` · ${preview.duplicatesInInput} repetidos ignorados` : ""}{preview.invalid.length > 0 ? ` · ${preview.invalid.length} não reconhecidos` : ""}</p> : null}
-            <Button type="submit" disabled={saving || !preview?.valid.length}>{saving ? <Loader2 className="size-4 animate-spin" /> : null}Adicionar lista</Button>
-          </form></CardContent>
-        </Card>
+        <Card><CardHeader><CardTitle className="text-base">Adicionar uma pessoa</CardTitle></CardHeader><CardContent><form onSubmit={handleSingle} className="space-y-4"><div className="space-y-2"><Label htmlFor="perfil">@ do Instagram</Label><Input id="perfil" value={single} onChange={(e) => setSingle(e.target.value)} placeholder="@joaodasilva" /></div><div className="space-y-2"><Label htmlFor="nome-membro">Nome (opcional)</Label><Input id="nome-membro" value={singleName} onChange={(e) => setSingleName(e.target.value)} placeholder="João da Silva" /></div><Button type="submit" disabled={saving}>{saving ? <Loader2 className="size-4 animate-spin" /> : <UserPlus className="size-4" />}Adicionar</Button></form></CardContent></Card>
+        <Card><CardHeader><CardTitle className="text-base">Adicionar vários de uma vez</CardTitle></CardHeader><CardContent><form onSubmit={handleBulk} className="space-y-4"><div className="space-y-2"><Label htmlFor="lista">Cole a lista de @</Label><Textarea id="lista" rows={6} value={bulk} onChange={(e) => setBulk(e.target.value)} placeholder={"@maria\n@joao, @ana\nhttps://instagram.com/pedro"} /><p className="text-xs text-muted-foreground">Pode colar um por linha, separados por vírgula ou copiados de uma planilha.</p></div><div className="space-y-2"><Label htmlFor="arquivo">Ou envie um arquivo CSV/TXT</Label><Input id="arquivo" type="file" accept=".csv,.txt" onChange={handleFile} /></div>{preview ? <p className="text-sm text-muted-foreground"><strong className="text-foreground">{preview.valid.length}</strong> perfis prontos para adicionar{preview.duplicatesInInput > 0 ? ` · ${preview.duplicatesInInput} repetidos ignorados` : ""}{preview.invalid.length > 0 ? ` · ${preview.invalid.length} não reconhecidos` : ""}</p> : null}<Button type="submit" disabled={saving || !preview?.valid.length}>{saving ? <Loader2 className="size-4 animate-spin" /> : null}Adicionar lista</Button></form></CardContent></Card>
       </div>
-
-      <Card>
-        <CardHeader className="flex-col items-start gap-3 lg:flex-row lg:items-center lg:justify-between">
-          <CardTitle className="text-base">Pessoas na rede ({activeCount} ativas)</CardTitle>
-          <div className="grid w-full gap-2 sm:grid-cols-2 lg:w-auto lg:grid-cols-3">
-            <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar por @ ou nome" />
-            <Select value={statusFilter} onValueChange={setStatusFilter}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">Todos os status</SelectItem><SelectItem value="active">Ativos</SelectItem><SelectItem value="inactive">Inativos</SelectItem></SelectContent></Select>
-            <Select value={activityFilter} onValueChange={setActivityFilter}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">Toda participação</SelectItem><SelectItem value="participated">Já identificados</SelectItem><SelectItem value="never">Nunca identificados</SelectItem></SelectContent></Select>
-          </div>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? <p className="text-sm text-muted-foreground">Carregando…</p> : filtered.length === 0 ? <EmptyState icon={Users} title="Nenhum perfil encontrado" description="Ajuste os filtros ou adicione pessoas à sua rede." /> : (
-            <div className="divide-y divide-border overflow-hidden rounded-lg border border-border">
-              {filtered.map((member) => {
-                const activity = participation?.get(member.id);
-                return <div key={member.id} className="flex flex-wrap items-center justify-between gap-3 px-4 py-3">
-                  <div className="min-w-0"><p className="truncate text-sm font-medium">@{member.instagram_username}</p><p className="truncate text-xs text-muted-foreground">{member.display_name ? `${member.display_name} · ` : ""}desde {formatDate(member.created_at)}{activity?.count ? ` · ${activity.count} participação(ões)` : " · nunca identificada"}{activity?.last ? ` · última ${formatDate(activity.last)}` : ""}</p></div>
-                  <div className="flex items-center gap-1">
-                    {member.active ? null : <Badge variant="outline">Inativo</Badge>}
-                    <Button variant="ghost" size="sm" onClick={() => setEditing({ id: member.id, username: member.instagram_username, name: member.display_name ?? "", active: member.active })}><Pencil className="mr-1 size-4" />Editar</Button>
-                    <Button variant="ghost" size="sm" onClick={() => toggleActive(member.id, !member.active)}>{member.active ? "Desativar" : "Reativar"}</Button>
-                    <Button variant="ghost" size="icon" aria-label="Remover" onClick={() => setDeleteId(member.id)}><Trash2 className="size-4 text-destructive" /></Button>
-                  </div>
-                </div>;
-              })}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      <Dialog open={Boolean(editing)} onOpenChange={(open) => !open && setEditing(null)}>
-        <DialogContent>
-          <DialogHeader><DialogTitle>Editar perfil da rede</DialogTitle><DialogDescription>Atualize o @, nome e status. O histórico de participação permanece associado ao registro.</DialogDescription></DialogHeader>
-          {editing ? <div className="space-y-4"><div className="space-y-2"><Label htmlFor="edit-username">@ do Instagram</Label><Input id="edit-username" value={editing.username} onChange={(e) => setEditing({ ...editing, username: e.target.value })} /></div><div className="space-y-2"><Label htmlFor="edit-name">Nome</Label><Input id="edit-name" value={editing.name} onChange={(e) => setEditing({ ...editing, name: e.target.value })} /></div><label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={editing.active} onChange={(e) => setEditing({ ...editing, active: e.target.checked })} /> Perfil ativo</label></div> : null}
-          <DialogFooter><Button variant="outline" onClick={() => setEditing(null)}>Cancelar</Button><Button onClick={saveEdit} disabled={saving}>{saving ? <Loader2 className="size-4 animate-spin" /> : null}Salvar</Button></DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <AlertDialog open={Boolean(deleteId)} onOpenChange={(open) => !open && setDeleteId(null)}>
-        <AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Remover este perfil?</AlertDialogTitle><AlertDialogDescription>A pessoa será retirada da rede atual. Os registros históricos de análises não serão apagados.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Cancelar</AlertDialogCancel><AlertDialogAction onClick={removeMember}>Remover</AlertDialogAction></AlertDialogFooter></AlertDialogContent>
-      </AlertDialog>
+      <Card><CardHeader className="flex-col items-start gap-3 lg:flex-row lg:items-center lg:justify-between"><CardTitle className="text-base">Pessoas na rede ({activeCount} ativas)</CardTitle><div className="grid w-full gap-2 sm:grid-cols-2 lg:w-auto lg:grid-cols-3"><Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar por @ ou nome" /><Select value={statusFilter} onValueChange={setStatusFilter}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">Todos os status</SelectItem><SelectItem value="active">Ativos</SelectItem><SelectItem value="inactive">Inativos</SelectItem></SelectContent></Select><Select value={activityFilter} onValueChange={setActivityFilter}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">Toda participação</SelectItem><SelectItem value="participated">Já identificados</SelectItem><SelectItem value="never">Nunca identificados</SelectItem></SelectContent></Select></div></CardHeader><CardContent>{isLoading ? <p className="text-sm text-muted-foreground">Carregando…</p> : filtered.length === 0 ? <EmptyState icon={Users} title="Nenhum perfil encontrado" description="Ajuste os filtros ou adicione pessoas à sua rede." /> : <div className="divide-y divide-border overflow-hidden rounded-lg border border-border">{filtered.map((member) => { const activity = participation?.get(member.id); return <div key={member.id} className="flex flex-wrap items-center justify-between gap-3 px-4 py-3"><div className="min-w-0"><p className="truncate text-sm font-medium">@{member.instagram_username}</p><p className="truncate text-xs text-muted-foreground">{member.display_name ? `${member.display_name} · ` : ""}desde {formatDate(member.created_at)}{activity?.count ? ` · ${activity.count} participação(ões)` : " · nunca identificada"}{activity?.last ? ` · última ${formatDate(activity.last)}` : ""}</p></div><div className="flex items-center gap-1">{member.active ? null : <Badge variant="outline">Inativo</Badge>}<Button variant="ghost" size="sm" onClick={() => setEditing({ id: member.id, username: member.instagram_username, name: member.display_name ?? "", active: member.active })}><Pencil className="mr-1 size-4" />Editar</Button><Button variant="ghost" size="sm" onClick={() => toggleActive(member.id, !member.active)}>{member.active ? "Desativar" : "Reativar"}</Button><Button variant="ghost" size="icon" aria-label="Remover" onClick={() => setDeleteId(member.id)}><Trash2 className="size-4 text-destructive" /></Button></div></div>; })}</div>}</CardContent></Card>
+      <Dialog open={Boolean(editing)} onOpenChange={(open) => !open && setEditing(null)}><DialogContent><DialogHeader><DialogTitle>Editar perfil da rede</DialogTitle><DialogDescription>Atualize o @, nome e status. O histórico de participação permanece associado ao registro.</DialogDescription></DialogHeader>{editing ? <div className="space-y-4"><div className="space-y-2"><Label htmlFor="edit-username">@ do Instagram</Label><Input id="edit-username" value={editing.username} onChange={(e) => setEditing({ ...editing, username: e.target.value })} /></div><div className="space-y-2"><Label htmlFor="edit-name">Nome</Label><Input id="edit-name" value={editing.name} onChange={(e) => setEditing({ ...editing, name: e.target.value })} /></div><label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={editing.active} onChange={(e) => setEditing({ ...editing, active: e.target.checked })} /> Perfil ativo</label></div> : null}<DialogFooter><Button variant="outline" onClick={() => setEditing(null)}>Cancelar</Button><Button onClick={saveEdit} disabled={saving}>{saving ? <Loader2 className="size-4 animate-spin" /> : null}Salvar</Button></DialogFooter></DialogContent></Dialog>
+      <AlertDialog open={Boolean(deleteId)} onOpenChange={(open) => !open && setDeleteId(null)}><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Remover este perfil?</AlertDialogTitle><AlertDialogDescription>A pessoa será retirada da rede atual. Os registros históricos de análises não serão apagados.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Cancelar</AlertDialogCancel><AlertDialogAction onClick={removeMember}>Remover</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog>
       <PrivacyNotice />
     </>
   );
