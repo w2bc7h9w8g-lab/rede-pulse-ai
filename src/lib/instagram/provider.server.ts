@@ -73,6 +73,17 @@ export class DemoInstagramProvider implements InstagramProvider {
   }
 }
 
+/** Remove any access token accidentally embedded in Meta pagination URLs. */
+function sanitizeGraphUrl(url: string): string {
+  try {
+    const parsed = new URL(url);
+    parsed.searchParams.delete("access_token");
+    return parsed.toString();
+  } catch {
+    return url;
+  }
+}
+
 /** Provedor oficial Meta/Instagram Graph API. */
 export class MetaGraphProvider implements InstagramProvider {
   readonly id = "meta_graph" as const;
@@ -138,7 +149,7 @@ export class MetaGraphProvider implements InstagramProvider {
 
   private async graphFetch(url: string): Promise<Response> {
     if (!this.accessToken) throw new ProviderNotConfiguredError("Token da Meta não configurado.");
-    return fetch(url, {
+    return fetch(sanitizeGraphUrl(url), {
       headers: {
         Authorization: `Bearer ${this.accessToken}`,
         Accept: "application/json",
@@ -159,7 +170,7 @@ export class MetaGraphProvider implements InstagramProvider {
       };
       const found = (json.data ?? []).find((m) => m.permalink?.includes(request.shortcode ?? "@@"));
       if (found) return found.id;
-      url = json.paging?.next ?? "";
+      url = json.paging?.next ? sanitizeGraphUrl(json.paging.next) : "";
     }
     return null;
   }
@@ -174,15 +185,16 @@ export class MetaGraphProvider implements InstagramProvider {
     for (let page = 0; page < 50 && url; page += 1) {
       const res = await this.graphFetch(url);
       if (!res.ok) {
-        const body = await res.text();
-        throw new Error(`Instagram Graph API [${res.status}]: ${body}`);
+        // Never persist or expose the raw Graph response because it can contain
+        // internal details or credentials included by an upstream error.
+        throw new Error(`Instagram Graph API indisponível (HTTP ${res.status}).`);
       }
       const json = (await res.json()) as {
         data?: Array<{ id: string; text?: string; timestamp?: string; username?: string }>;
         paging?: { next?: string };
       };
       comments.push(...(json.data ?? []));
-      url = json.paging?.next ?? "";
+      url = json.paging?.next ? sanitizeGraphUrl(json.paging.next) : "";
     }
 
     return comments;
