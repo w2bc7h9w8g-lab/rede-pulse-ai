@@ -17,6 +17,7 @@ export type SessionInfo = {
   } | null;
   leaderId: string | null;
   leaderName: string | null;
+  mustChangePassword: boolean;
 };
 
 export async function loadSession(): Promise<SessionInfo | null> {
