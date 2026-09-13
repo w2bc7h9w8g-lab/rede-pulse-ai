@@ -137,31 +137,52 @@ export type Database = {
       campaigns: {
         Row: {
           candidate_name: string | null
+          city: string | null
           created_at: string
           id: string
           instagram_username: string | null
           is_demo: boolean
+          logo_url: string | null
           name: string
+          office: string | null
+          party: string | null
+          period_end: string | null
+          period_start: string | null
+          state: string | null
           status: Database["public"]["Enums"]["entity_status"]
           updated_at: string
         }
         Insert: {
           candidate_name?: string | null
+          city?: string | null
           created_at?: string
           id?: string
           instagram_username?: string | null
           is_demo?: boolean
+          logo_url?: string | null
           name: string
+          office?: string | null
+          party?: string | null
+          period_end?: string | null
+          period_start?: string | null
+          state?: string | null
           status?: Database["public"]["Enums"]["entity_status"]
           updated_at?: string
         }
         Update: {
           candidate_name?: string | null
+          city?: string | null
           created_at?: string
           id?: string
           instagram_username?: string | null
           is_demo?: boolean
+          logo_url?: string | null
           name?: string
+          office?: string | null
+          party?: string | null
+          period_end?: string | null
+          period_start?: string | null
+          state?: string | null
           status?: Database["public"]["Enums"]["entity_status"]
           updated_at?: string
         }
@@ -291,6 +312,7 @@ export type Database = {
       leaders: {
         Row: {
           campaign_id: string
+          coordinator_id: string | null
           created_at: string
           id: string
           invite_email: string | null
@@ -303,6 +325,7 @@ export type Database = {
         }
         Insert: {
           campaign_id: string
+          coordinator_id?: string | null
           created_at?: string
           id?: string
           invite_email?: string | null
@@ -315,6 +338,7 @@ export type Database = {
         }
         Update: {
           campaign_id?: string
+          coordinator_id?: string | null
           created_at?: string
           id?: string
           invite_email?: string | null
@@ -331,6 +355,13 @@ export type Database = {
             columns: ["campaign_id"]
             isOneToOne: false
             referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leaders_coordinator_id_fkey"
+            columns: ["coordinator_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -480,6 +511,50 @@ export type Database = {
           },
         ]
       }
+      user_invitations: {
+        Row: {
+          accepted_at: string | null
+          campaign_id: string | null
+          created_at: string
+          email: string
+          expires_at: string
+          id: string
+          invited_by: string | null
+          role: Database["public"]["Enums"]["app_role"]
+          token: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          campaign_id?: string | null
+          created_at?: string
+          email: string
+          expires_at?: string
+          id?: string
+          invited_by?: string | null
+          role: Database["public"]["Enums"]["app_role"]
+          token?: string
+        }
+        Update: {
+          accepted_at?: string | null
+          campaign_id?: string | null
+          created_at?: string
+          email?: string
+          expires_at?: string
+          id?: string
+          invited_by?: string | null
+          role?: Database["public"]["Enums"]["app_role"]
+          token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_invitations_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           campaign_id: string | null
@@ -517,6 +592,35 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_assign_leader: {
+        Args: {
+          _campaign_id: string
+          _coordinator_id?: string
+          _leader_id: string
+          _user_id?: string
+        }
+        Returns: undefined
+      }
+      admin_remove_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: undefined
+      }
+      admin_set_user_role: {
+        Args: {
+          _campaign_id?: string
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: undefined
+      }
+      can_access_leader: {
+        Args: { _campaign_id: string; _leader_id: string }
+        Returns: boolean
+      }
+      clear_must_change_password: { Args: never; Returns: undefined }
       create_campaign_for_current_user: {
         Args: {
           _candidate_name?: string
@@ -526,7 +630,20 @@ export type Database = {
         }
         Returns: string
       }
+      current_campaign_id: { Args: never; Returns: string }
+      current_leader_id: { Args: never; Returns: string }
+      current_profile_campaign_id: { Args: never; Returns: string }
+      current_profile_must_change_password: { Args: never; Returns: boolean }
       ensure_profile: { Args: { _name?: string }; Returns: undefined }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
+      is_coordinator: { Args: never; Returns: boolean }
+      is_superadmin: { Args: never; Returns: boolean }
     }
     Enums: {
       analysis_status: "pending" | "running" | "completed" | "failed"
