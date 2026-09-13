@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthRouteImport } from './routes/auth'
+import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedBemVindoRouteImport } from './routes/_authenticated/bem-vindo'
 import { Route as AuthenticatedContaInstagramRouteImport } from './routes/_authenticated/conta-instagram'
 import { Route as AuthenticatedHistoricoRouteImport } from './routes/_authenticated/historico'
@@ -38,6 +39,11 @@ const AuthRoute = AuthRouteImport.update({
   id: '/auth',
   path: '/auth',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedBemVindoRoute = AuthenticatedBemVindoRouteImport.update({
   id: '/bem-vindo',
@@ -108,6 +114,7 @@ const AuthenticatedEquipeLeaderIdRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/admin': typeof AuthenticatedAdminRoute
   '/bem-vindo': typeof AuthenticatedBemVindoRoute
   '/conta-instagram': typeof AuthenticatedContaInstagramRoute
   '/historico': typeof AuthenticatedHistoricoRoute
@@ -124,6 +131,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/admin': typeof AuthenticatedAdminRoute
   '/bem-vindo': typeof AuthenticatedBemVindoRoute
   '/conta-instagram': typeof AuthenticatedContaInstagramRoute
   '/historico': typeof AuthenticatedHistoricoRoute
@@ -142,6 +150,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
+  '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/_authenticated/bem-vindo': typeof AuthenticatedBemVindoRoute
   '/_authenticated/conta-instagram': typeof AuthenticatedContaInstagramRoute
   '/_authenticated/historico': typeof AuthenticatedHistoricoRoute
@@ -160,6 +169,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/auth'
+    | '/admin'
     | '/bem-vindo'
     | '/conta-instagram'
     | '/historico'
@@ -176,6 +186,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/auth'
+    | '/admin'
     | '/bem-vindo'
     | '/conta-instagram'
     | '/historico'
@@ -193,6 +204,7 @@ export interface FileRouteTypes {
     | '/'
     | '/_authenticated'
     | '/auth'
+    | '/_authenticated/admin'
     | '/_authenticated/bem-vindo'
     | '/_authenticated/conta-instagram'
     | '/_authenticated/historico'
@@ -236,6 +248,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/auth'
       preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/admin': {
+      id: '/_authenticated/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AuthenticatedAdminRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/bem-vindo': {
       id: '/_authenticated/bem-vindo'
@@ -325,6 +344,7 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthenticatedRouteRouteChildren {
+  AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
   AuthenticatedBemVindoRoute: typeof AuthenticatedBemVindoRoute
   AuthenticatedContaInstagramRoute: typeof AuthenticatedContaInstagramRoute
   AuthenticatedHistoricoRoute: typeof AuthenticatedHistoricoRoute
@@ -339,6 +359,7 @@ interface AuthenticatedRouteRouteChildren {
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedAdminRoute: AuthenticatedAdminRoute,
   AuthenticatedBemVindoRoute: AuthenticatedBemVindoRoute,
   AuthenticatedContaInstagramRoute: AuthenticatedContaInstagramRoute,
   AuthenticatedHistoricoRoute: AuthenticatedHistoricoRoute,
