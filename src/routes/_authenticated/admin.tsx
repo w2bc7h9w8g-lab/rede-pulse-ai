@@ -648,7 +648,7 @@ function UsersAdmin({ data, refresh }: { data: AdminData; refresh: () => Promise
     const { error } = await supabase.rpc("admin_set_user_role", {
       _user_id: userId,
       _role: targetRole,
-      _campaign_id: campaignId ?? undefined,
+      ...(campaignId ? { _campaign_id: campaignId } : {}),
     });
     setPendingUser(null);
     if (error) {
@@ -936,8 +936,8 @@ function LeadersAdmin({
     const { error } = await supabase.rpc("admin_assign_leader", {
       _leader_id: l.id,
       _campaign_id: campaignId,
-      _coordinator_id: coordinatorId || undefined,
-      _user_id: l.user_id ?? undefined,
+      ...(coordinatorId ? { _coordinator_id: coordinatorId } : {}),
+      ...(l.user_id ? { _user_id: l.user_id } : {}),
     });
     setSaving(null);
     if (error) {
