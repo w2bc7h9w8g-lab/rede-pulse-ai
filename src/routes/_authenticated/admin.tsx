@@ -133,7 +133,7 @@ async function logAdminAction(
     action,
     entity_type: entityType,
     entity_id: entityId,
-    metadata: metadata ?? null,
+    metadata: (metadata ?? null) as never,
   });
 }
 
@@ -648,7 +648,7 @@ function UsersAdmin({ data, refresh }: { data: AdminData; refresh: () => Promise
     const { error } = await supabase.rpc("admin_set_user_role", {
       _user_id: userId,
       _role: targetRole,
-      _campaign_id: campaignId,
+      _campaign_id: campaignId ?? undefined,
     });
     setPendingUser(null);
     if (error) {
@@ -936,8 +936,8 @@ function LeadersAdmin({
     const { error } = await supabase.rpc("admin_assign_leader", {
       _leader_id: l.id,
       _campaign_id: campaignId,
-      _coordinator_id: coordinatorId || null,
-      _user_id: l.user_id,
+      _coordinator_id: coordinatorId || undefined,
+      _user_id: l.user_id ?? undefined,
     });
     setSaving(null);
     if (error) {
