@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { FileSpreadsheet, Loader2, UserPlus, UsersRound } from "lucide-react";
+import { Copy, FileSpreadsheet, Loader2, UserPlus, UsersRound } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,7 +15,6 @@ import { isCoordinator, useSession } from "@/lib/session";
 import { brDayKey, formatNumber, formatPercent } from "@/lib/format";
 import { downloadXlsx } from "@/lib/excel";
 import { fetchAnalyses } from "@/lib/reports";
-
 
 export const Route = createFileRoute("/_authenticated/equipe/")({
   head: () => ({
@@ -37,6 +36,8 @@ function TeamPage() {
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [saving, setSaving] = useState(false);
+  const [invitingId, setInvitingId] = useState<string | null>(null);
+  const [inviteLinks, setInviteLinks] = useState<Record<string, string>>({});
 
   const { data, isLoading } = useQuery({
     queryKey: ["equipe"],
@@ -78,27 +79,61 @@ function TeamPage() {
     };
   };
 
+  async function createInvitation(leaderId: string, copy = true) {
+    setInvitingId(leaderId);
+    try {
+      const { data: invitation, error } = await supabase
+        .rpc("create_leader_invitation", { _leader_id: leaderId })
+        .single();
+      if (error) throw error;
+      const token = invitation?.token as string | undefined;
+      if (!token) throw new Error("O convite foi criado, mas não recebemos o token.");
+      const link = `${window.location.origin}/auth?invite=${encodeURIComponent(token)}`;
+      setInviteLinks((current) => ({ ...current, [leaderId]: link }));
+      if (copy) {
+        await navigator.clipboard.writeText(link);
+        toast.success("Convite copiado!", {
+          description: "Envie este link ao líder para ele criar a senha e entrar na rede.",
+        });
+      } else {
+        toast.success("Novo convite gerado.", { description: "O convite anterior foi encerrado." });
+      }
+    } catch (error) {
+      toast.error("Não foi possível gerar o convite", {
+        description: error instanceof Error ? error.message : undefined,
+      });
+    } finally {
+      setInvitingId(null);
+    }
+  }
+
   async function handleCreate(event: React.FormEvent) {
     event.preventDefault();
     if (!session?.campaign?.id) return;
     setSaving(true);
     try {
-      const { error } = await supabase.from("leaders").insert({
-        campaign_id: session.campaign.id,
-        name: name.trim(),
-        invite_email: email.trim().toLowerCase() || null,
-        phone: phone.trim() || null,
-      });
+      const { data: leader, error } = await supabase
+        .from("leaders")
+        .insert({
+          campaign_id: session.campaign.id,
+          name: name.trim(),
+          invite_email: email.trim().toLowerCase() || null,
+          phone: phone.trim() || null,
+        })
+        .select("id")
+        .single();
       if (error) throw error;
-      toast.success("Líder cadastrado!", {
-        description: email
-          ? "Peça para ele criar a conta com este mesmo e-mail para acessar a rede."
-          : undefined,
-      });
       setName("");
       setEmail("");
       setPhone("");
       await queryClient.invalidateQueries({ queryKey: ["equipe"] });
+      if (email.trim()) {
+        await createInvitation(leader.id, true);
+      } else {
+        toast.success("Líder cadastrado!", {
+          description: "Adicione um e-mail depois para liberar o convite de acesso.",
+        });
+      }
     } catch (error) {
       toast.error("Não foi possível cadastrar", {
         description: error instanceof Error ? error.message : undefined,
@@ -118,11 +153,8 @@ function TeamPage() {
     await queryClient.invalidateQueries({ queryKey: ["equipe"] });
   }
 
-  const ranking = [...(data?.leaders ?? [])].sort(
-    (a, b) => stats(b.id).avg - stats(a.id).avg,
-  );
-
   async function handleExportTeam() {
+    const ranking = [...(data?.leaders ?? [])].sort((a, b) => stats(b.id).avg - stats(a.id).avg);
     if (ranking.length === 0) {
       toast.error("Não há líderes para exportar.");
       return;
@@ -153,18 +185,19 @@ function TeamPage() {
     }
   }
 
+  const ranking = [...(data?.leaders ?? [])].sort((a, b) => stats(b.id).avg - stats(a.id).avg);
+
   return (
     <>
       <PageHeader
         title="Minha equipe"
-        description="Cadastre seus líderes. Cada um monta a própria rede e vê apenas os resultados dela."
+        description="Cadastre seus líderes e envie um convite para cada um criar o próprio acesso."
         actions={
           <Button variant="outline" onClick={handleExportTeam}>
             <FileSpreadsheet className="size-4" /> Baixar Excel
           </Button>
         }
       />
-
 
       <Card className="max-w-2xl">
         <CardHeader>
@@ -174,32 +207,15 @@ function TeamPage() {
           <form onSubmit={handleCreate} className="grid gap-4 sm:grid-cols-3">
             <div className="space-y-2 sm:col-span-3">
               <Label htmlFor="nome-lider">Nome do líder</Label>
-              <Input
-                id="nome-lider"
-                required
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="Ex.: Ana Souza"
-              />
+              <Input id="nome-lider" required value={name} onChange={(e) => setName(e.target.value)} placeholder="Ex.: Ana Souza" />
             </div>
             <div className="space-y-2 sm:col-span-2">
               <Label htmlFor="email-lider">E-mail de acesso</Label>
-              <Input
-                id="email-lider"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="ana@exemplo.com"
-              />
+              <Input id="email-lider" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="ana@exemplo.com" />
             </div>
             <div className="space-y-2">
               <Label htmlFor="tel-lider">WhatsApp (opcional)</Label>
-              <Input
-                id="tel-lider"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                placeholder="(11) 90000-0000"
-              />
+              <Input id="tel-lider" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="(11) 90000-0000" />
             </div>
             <div className="sm:col-span-3">
               <Button type="submit" disabled={saving}>
@@ -209,8 +225,7 @@ function TeamPage() {
             </div>
           </form>
           <p className="mt-3 text-xs text-muted-foreground">
-            Assim que o líder criar a conta com esse e-mail, o acesso à rede dele é liberado
-            automaticamente.
+            Se informar o e-mail, o RedePulse gera o convite na hora e você pode copiar o link para enviar ao líder.
           </p>
         </CardContent>
       </Card>
@@ -223,31 +238,21 @@ function TeamPage() {
           {isLoading ? (
             <p className="text-sm text-muted-foreground">Carregando…</p>
           ) : ranking.length === 0 ? (
-            <EmptyState
-              icon={UsersRound}
-              title="Nenhum líder cadastrado"
-              description="Cadastre o primeiro líder para começar a organizar as redes."
-            />
+            <EmptyState icon={UsersRound} title="Nenhum líder cadastrado" description="Cadastre o primeiro líder para começar a organizar as redes." />
           ) : (
             <div className="divide-y divide-border overflow-hidden rounded-lg border border-border">
               {ranking.map((leader) => {
                 const s = stats(leader.id);
+                const inviting = invitingId === leader.id;
+                const link = inviteLinks[leader.id];
                 return (
-                  <div
-                    key={leader.id}
-                    className="flex flex-wrap items-center justify-between gap-3 px-4 py-3"
-                  >
+                  <div key={leader.id} className="flex flex-wrap items-center justify-between gap-3 px-4 py-3">
                     <div className="min-w-0">
-                      <Link
-                        to="/equipe/$leaderId"
-                        params={{ leaderId: leader.id }}
-                        className="truncate text-sm font-medium hover:underline"
-                      >
+                      <Link to="/equipe/$leaderId" params={{ leaderId: leader.id }} className="truncate text-sm font-medium hover:underline">
                         {leader.name}
                       </Link>
                       <p className="truncate text-xs text-muted-foreground">
-                        {leader.invite_email ?? "sem e-mail"} ·{" "}
-                        {leader.user_id ? "acesso ativo" : "aguardando primeiro acesso"}
+                        {leader.invite_email ?? "sem e-mail"} · {leader.user_id ? "acesso ativo" : "aguardando primeiro acesso"}
                       </p>
                     </div>
                     <div className="flex flex-wrap items-center gap-2">
@@ -255,11 +260,23 @@ function TeamPage() {
                       <Badge variant="outline">{s.analyses} análises</Badge>
                       <Badge variant="secondary">{formatPercent(s.avg)}</Badge>
                       {leader.status !== "active" ? <Badge>Inativo</Badge> : null}
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => toggleStatus(leader.id, leader.status)}
-                      >
+                      {!leader.user_id && leader.invite_email ? (
+                        link ? (
+                          <Button variant="outline" size="sm" onClick={() => navigator.clipboard.writeText(link).then(() => toast.success("Convite copiado!"))}>
+                            <Copy className="size-4" /> Copiar convite
+                          </Button>
+                        ) : (
+                          <Button variant="outline" size="sm" disabled={inviting} onClick={() => createInvitation(leader.id)}>
+                            {inviting ? <Loader2 className="size-4 animate-spin" /> : <UserPlus className="size-4" />} Gerar convite
+                          </Button>
+                        )
+                      ) : null}
+                      {!leader.user_id && leader.invite_email && link ? (
+                        <Button variant="ghost" size="sm" disabled={inviting} onClick={() => createInvitation(leader.id, false)}>
+                          {inviting ? <Loader2 className="size-4 animate-spin" /> : null} Novo link
+                        </Button>
+                      ) : null}
+                      <Button variant="ghost" size="sm" onClick={() => toggleStatus(leader.id, leader.status)}>
                         {leader.status === "active" ? "Desativar" : "Reativar"}
                       </Button>
                     </div>
